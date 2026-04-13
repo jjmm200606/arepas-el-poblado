@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Carrito | Arepas El Poblado{% endblock %}
+
+{% block content %}
+<section class="banner-titulo">
+  <h1>Carrito de compras</h1>
+</section>
+
+<section class="carrito-wrapper">
+  <div class="carrito-card">
+    <div id="lista-carrito" class="lista-carrito"></div>
+
+    <div class="carrito-resumen">
+      <h2 id="total-carrito">Total: $0</h2>
+
+      <div class="acciones-carrito">
+        <button class="boton boton-secundario" onclick="vaciarCarrito()">Vaciar carrito</button>
+        <a class="boton" href="/pedido">Confirmar carrito y continuar</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function mostrarCarrito() {
+    const listaCarrito = document.getElementById("lista-carrito");
+    const totalCarrito = document.getElementById("total-carrito");
+    let carrito = window.cartStore.read();
+
+    if (carrito.length === 0) {
+      listaCarrito.innerHTML = `
+        <div class="carrito-vacio">
+          <h3>Tu carrito está vacío</h3>
+          <p>Agrega productos desde el catálogo para continuar con tu pedido.</p>
+          <a href="/catalogo" class="boton">Ir al catálogo</a>
+        </div>
+      `;
+      totalCarrito.textContent = "Total: $0";
+      return;
+    }
+
+    let html = "";
+    let total = 0;
+
+    carrito.forEach((item, index) => {
+      let subtotal = item.precio * item.cantidad;
+      total += subtotal;
+
+      html += `
+        <div class="item-carrito">
+          <div class="item-carrito-imagen">
+            <img src="${item.imagen || '/static/img/productos/arepa-pequena.png'}" alt="${item.nombre}" class="imagen-carrito">
+          </div>
+          <div class="item-carrito-info">
+            <h3>${item.nombre}</h3>
+            <p>Precio unitario: $${item.precio.toLocaleString("es-CO")}</p>
+            <p>Cantidad: ${item.cantidad}</p>
+            <p class="subtotal-item">Subtotal: $${subtotal.toLocaleString("es-CO")}</p>
+          </div>
+
+          <button class="boton-eliminar" onclick="eliminarProducto(${index})">Eliminar</button>
+        </div>
+      `;
+    });
+
+    listaCarrito.innerHTML = html;
+    totalCarrito.textContent = "Total: $" + total.toLocaleString("es-CO");
+  }
+
+  function eliminarProducto(index) {
+    let carrito = window.cartStore.read();
+    carrito.splice(index, 1);
+    window.cartStore.write(carrito);
+    mostrarCarrito();
+  }
+
+  function vaciarCarrito() {
+    window.cartStore.clear();
+    mostrarCarrito();
+  }
+
+  mostrarCarrito();
+</script>
+{% endblock %}

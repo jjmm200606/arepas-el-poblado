@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de administración | Arepas El Poblado{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+  <!-- SIDEBAR IZQUIERDO -->
+  <aside class="admin-sidebar">
+    <div class="admin-menu">
+      <a href="#" class="admin-menu-item activo" data-section="productos">
+        📦 Gestión de Productos
+      </a>
+      <a href="#" class="admin-menu-item" data-section="pedidos">
+        📋 Gestión de Pedidos
+      </a>
+      <a href="#" class="admin-menu-item" data-section="usuarios">
+        👥 Gestión de Usuarios
+      </a>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <section class="admin-content">
+    <div id="admin-content-area" class="admin-content-area">
+      <!-- El contenido se cargará aquí dinámicamente -->
+      <div class="loader">Cargando...</div>
+    </div>
+  </section>
+</div>
+
+<style>
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal.activo {
+    display: flex;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    width: min(92vw, 520px);
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 30px;
+    border-bottom: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    color: var(--verde-principal);
+    font-size: 20px;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #999;
+    cursor: pointer;
+  }
+
+  .modal-body {
+    padding: 30px;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 30px;
+    border-top: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .detalles-usuario {
+    display: grid;
+    gap: 20px;
+  }
+
+  .detalle-item {
+    display: grid;
+    gap: 8px;
+  }
+
+  .detalle-item label,
+  .form-group label {
+    display: block;
+    font-weight: 700;
+    color: var(--verde-principal);
+    font-size: 13px;
+    text-transform: uppercase;
+  }
+
+  .detalle-item p {
+    margin: 0;
+    color: #333;
+    font-size: 15px;
+    padding: 12px;
+    background: rgba(18, 161, 80, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid var(--verde-principal);
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid rgba(18, 161, 80, 0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .btn-modal-cerrar,
+  .btn-modal-guardar {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .btn-modal-cerrar {
+    background: #f0f0f0;
+    color: #666;
+  }
+
+  .btn-modal-guardar {
+    background: var(--verde-principal);
+    color: white;
+  }
+</style>
+
+<script>
+let productoIdEdit = null;
+
+function obtenerUsuarioDesdeBoton(btn) {
+  return {
+    id: btn.dataset.usuarioId,
+    nombre: btn.dataset.usuarioNombre,
+    email: btn.dataset.usuarioEmail,
+    rol: btn.dataset.usuarioRol,
+    estado: btn.dataset.usuarioEstado,
+  };
+}
+
+function abrirModalVerDesdeBoton(btn) {
+  abrirModalVer(obtenerUsuarioDesdeBoton(btn));
+}
+
+function abrirModalEditarDesdeBoton(btn) {
+  abrirModalEditar(obtenerUsuarioDesdeBoton(btn));
+}
+
+// FUNCIONES PARA PRODUCTOS
+function abrirModalEditar(btn, id, nombre, correo, rol, estado) {
+  if (!btn || arguments.length > 1 || (typeof btn === 'object' && btn !== null && !btn.getAttribute)) {
+    const usuario = typeof btn === 'object' && btn !== null && !btn.getAttribute
+      ? btn
+      : { id, nombre, email: correo, rol, estado };
+
+    document.getElementById('editar-id').value = usuario.id;
+    document.getElementById('editar-nombre').value = usuario.nombre;
+    document.getElementById('editar-correo').value = usuario.email;
+    document.getElementById('editar-rol').value = usuario.rol;
+    document.getElementById('editar-estado').value = usuario.estado;
+
+    document.getElementById('modalEditarUsuario').classList.add('activo');
+    return;
+  }
+
+  // Si viene del sistema de productos
+  const productoId = btn.getAttribute('data-producto-id');
+  const productoNombre = btn.getAttribute('data-producto-nombre');
+  const precio = btn.getAttribute('data-producto-precio');
+  const stock = btn.getAttribute('data-producto-stock');
+  
+  productoIdEdit = productoId;
+  document.getElementById('nombreProducto').value = productoNombre;
+  document.getElementById('precioEditar').value = precio;
+  document.getElementById('stockEditar').value = stock;
+  
+  const modal = document.getElementById('modalEditar');
+  if (modal) {
+    modal.classList.add('activo');
+  }
+}
+
+// FUNCIONES PARA USUARIOS
+function abrirModalVer(usuario, id, nombre, correo, rol, estado) {
+  if (typeof usuario !== 'object' || usuario === null) {
+    usuario = { id, nombre, email: correo, rol, estado };
+  }
+
+  document.getElementById('ver-id').textContent = usuario.id;
+  document.getElementById('ver-nombre').textContent = usuario.nombre;
+  document.getElementById('ver-correo').textContent = usuario.email;
+
+  const rolTexto = usuario.rol === 'admin' ? '⚙️ Administrador' : '👤 Cliente';
+  document.getElementById('ver-rol').textContent = rolTexto;
+
+  const estadoTexto = usuario.estado === 'activo' ? '🟢 Activo' : '🔴 Inactivo';
+  document.getElementById('ver-estado').textContent = estadoTexto;
+
+  document.getElementById('modalVerUsuario').classList.add('activo');
+}
+
+function cerrarModalVer() {
+  const modal = document.getElementById('modalVerUsuario');
+  if (modal) {
+    modal.classList.remove('activo');
+  }
+}
+
+function cerrarModalEditar() {
+  const modal = document.getElementById('modalEditarUsuario');
+  if (modal) {
+    modal.classList.remove('activo');
+  }
+}
+
+function cerrarModal() {
+  const modal = document.getElementById('modalEditar');
+  if (modal) {
+    modal.classList.remove('activo');
+  }
+}
+
+function cargarContenido(section) {
+  const contentArea = document.getElementById('admin-content-area');
+  contentArea.innerHTML = '<div class="loader">Cargando...</div>';
+  
+  fetch(`/admin/${section}/content`)
+    .then(response => response.text())
+    .then(html => {
+      contentArea.innerHTML = html;
+      
+      // Configurar los event listeners después de cargar
+      configurarEventosContent(section);
+    })
+    .catch(error => {
+      contentArea.innerHTML = '<p style="color: red;">Error al cargar el contenido</p>';
+      console.error('Error:', error);
+    });
+}
+
+function configurarEventosContent(section) {
+  if (section === 'productos') {
+    const formEditar = document.getElementById('formEditar');
+    if (formEditar) {
+      formEditar.removeEventListener('submit', manejarSubmitEditar);
+      formEditar.addEventListener('submit', manejarSubmitEditar);
+    }
+  } else if (section === 'pedidos') {
+    const selects = document.querySelectorAll('.select-estado');
+    selects.forEach(select => {
+      select.addEventListener('change', function() {
+        this.form.submit();
+      });
+    });
+  } else if (section === 'usuarios') {
+    const botonesVer = document.querySelectorAll('.btn-ver[data-usuario-id]');
+    botonesVer.forEach(btn => {
+      btn.onclick = function(e) {
+        e.preventDefault();
+        abrirModalVerDesdeBoton(this);
+        return false;
+      };
+    });
+
+    const botonesEditar = document.querySelectorAll('.btn-editar[data-usuario-id]');
+    botonesEditar.forEach(btn => {
+      btn.onclick = function(e) {
+        e.preventDefault();
+        abrirModalEditarDesdeBoton(this);
+        return false;
+      };
+    });
+
+    const formEditarUsuario = document.getElementById('formEditarUsuario');
+    if (formEditarUsuario) {
+      formEditarUsuario.removeEventListener('submit', manejarSubmitEditarUsuario);
+      formEditarUsuario.addEventListener('submit', manejarSubmitEditarUsuario);
+    }
+  }
+}
+
+function manejarSubmitEditar(e) {
+  e.preventDefault();
+  
+  const precio = document.getElementById('precioEditar').value;
+  const stock = document.getElementById('stockEditar').value;
+  
+  const formData = new FormData();
+  formData.append('precio', precio);
+  formData.append('stock', stock);
+  
+  fetch(`/admin/productos/actualizar/${productoIdEdit}`, {
+    method: 'POST',
+    body: formData
+  })
+  .then(() => {
+    cerrarModal();
+    cargarContenido('productos');
+  })
+  .catch(error => console.error('Error:', error));
+}
+
+function manejarSubmitEditarUsuario(e) {
+  e.preventDefault();
+
+  const id = document.getElementById('editar-id').value;
+  const rol = document.getElementById('editar-rol').value;
+  const estado = document.getElementById('editar-estado').value;
+
+  fetch(`/admin/usuarios/editar/${id}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `rol=${encodeURIComponent(rol)}&estado=${encodeURIComponent(estado)}`
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.exito) {
+        cerrarModalEditar();
+        cargarContenido('usuarios');
+      } else {
+        alert(data.mensaje || 'Error al actualizar el usuario');
+      }
+    })
+    .catch(() => {
+      alert('Error de red al actualizar el usuario');
+    });
+}
+
+// Cerrar modales con ESC
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    cerrarModalVer();
+    cerrarModalEditar();
+    cerrarModal();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  const menuItems = document.querySelectorAll('.admin-menu-item');
+
+  menuItems.forEach(item => {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Remover clase activo de todos
+      menuItems.forEach(m => m.classList.remove('activo'));
+      
+      // Agregar clase activo al clickeado
+      this.classList.add('activo');
+      
+      // Cargar sección
+      const section = this.getAttribute('data-section');
+      cargarContenido(section);
+    });
+  });
+
+  // Cargar la primera sección al iniciar
+  cargarContenido('productos');
+});
+</script>
+{% endblock %}

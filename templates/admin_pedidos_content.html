@@ -1,0 +1,422 @@
+<h2 style="margin-top: 0; color: var(--verde-principal); font-size: 28px;">📋 Gestión de Pedidos</h2>
+
+<div class="admin-table-card">
+  <h3 style="margin-top: 0;">Pedidos Registrados ({{ pedidos|length }})</h3>
+  
+  {% if pedidos %}
+    <div class="tabla-responsiva">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID Pedido</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Estado Actual</th>
+            <th>Estado</th>
+            <th>Eliminar</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pedido in pedidos %}
+          <tr>
+            <td><span class="badge">#{{ pedido.id }}</span></td>
+            <td><strong>{{ pedido.cliente_nombre }}</strong></td>
+            <td>{{ pedido.fecha_pedido }}</td>
+            <td>
+              <div class="items-tooltip-container">
+                <span class="badge-items">📦 Items</span>
+                <div class="items-tooltip">
+                  <strong>Detalles del pedido disponibles en BD</strong>
+                </div>
+              </div>
+            </td>
+            <td><span class="precio">$ {{ pedido.total|string }}</span></td>
+            <td>
+              {% if pedido.estado == "Pendiente" %}
+                <span class="estado estado-pendiente">⏳ Pendiente</span>
+              {% elif pedido.estado == "En proceso" %}
+                <span class="estado estado-proceso">⚙️ En proceso</span>
+              {% elif pedido.estado == "Completado" %}
+                <span class="estado estado-completado">✓ Completado</span>
+              {% elif pedido.estado == "Cancelado" %}
+                <span class="estado estado-cancelado">✕ Cancelado</span>
+              {% endif %}
+            </td>
+            <td>
+              <select class="select-estado" data-pedido-id="{{ pedido.id }}" onchange="cambiarEstado(event)">
+                <option value="Pendiente" {% if pedido.estado == "Pendiente" %}selected{% endif %}>Pendiente</option>
+                <option value="En proceso" {% if pedido.estado == "En proceso" %}selected{% endif %}>En proceso</option>
+                <option value="Completado" {% if pedido.estado == "Completado" %}selected{% endif %}>Completado</option>
+                <option value="Cancelado" {% if pedido.estado == "Cancelado" %}selected{% endif %}>Cancelado</option>
+              </select>
+            </td>
+            <td>
+              <button class="btn-eliminar" onclick="eliminarPedido(this.dataset.pedidoId, this)" data-pedido-id="{{ pedido.id }}">Eliminar</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="sin-datos">No hay pedidos registrados aún.</p>
+  {% endif %}
+</div>
+
+<!-- Resumen de estadísticas -->
+<div class="admin-stats">
+  <h3 style="color: var(--verde-principal); margin-top: 0;">📊 Resumen Rápido</h3>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📦</div>
+      <div class="stat-info">
+        <h4>Total de Pedidos</h4>
+        <p class="stat-number">{{ pedidos|length }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-info">
+        <h4>Pendientes</h4>
+        <p class="stat-number">{% set pendientes = pedidos|selectattr('estado', 'equalto', 'Pendiente')|list %}{{ pendientes|length }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">✓</div>
+      <div class="stat-info">
+        <h4>Completados</h4>
+        <p class="stat-number">{% set completados = pedidos|selectattr('estado', 'equalto', 'Completado')|list %}{{ completados|length }}</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-info">
+        <h4>Ingresos Totales</h4>
+        <p class="stat-number">$ {% set total = pedidos|map(attribute='total')|sum %}{{ total|string }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Script AJAX para cambios de estado y eliminación -->
+<script>
+  // Función para cambiar estado de pedido
+  function cambiarEstado(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const selectElement = event.target;
+    const pedidoId = selectElement.dataset.pedidoId;
+    const estado = selectElement.value;
+    const row = selectElement.closest('tr');
+
+    fetch(`/admin/pedidos/actualizar/${pedidoId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: 'estado=' + encodeURIComponent(estado)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.exito) {
+        selectElement.style.background = '#d4f7d4';
+        setTimeout(() => selectElement.style.background = '', 800);
+        
+        // Actualizar el estado visual en la columna Estado Actual
+        const estadoActualTd = row.querySelector('td:nth-child(6)');
+        if (estadoActualTd) {
+          let html = '';
+          if (estado === 'Pendiente') html = '<span class="estado estado-pendiente">⏳ Pendiente</span>';
+          else if (estado === 'En proceso') html = '<span class="estado estado-proceso">⚙️ En proceso</span>';
+          else if (estado === 'Completado') html = '<span class="estado estado-completado">✓ Completado</span>';
+          else if (estado === 'Cancelado') html = '<span class="estado estado-cancelado">✕ Cancelado</span>';
+          estadoActualTd.innerHTML = html;
+        }
+      }
+    });
+  }
+
+  // Función para eliminar pedido
+  function eliminarPedido(pedidoId, buttonElement) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este pedido?')) {
+      return;
+    }
+    
+    fetch(`/admin/pedidos/eliminar/${pedidoId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.exito) {
+        const row = buttonElement.closest('tr');
+        row.style.transition = 'opacity 0.3s';
+        row.style.opacity = '0';
+        setTimeout(() => row.remove(), 300);
+        alert('Pedido eliminado exitosamente');
+      }
+    });
+  }
+</script>
+
+<style>
+  .admin-section {
+    padding: 0;
+    background: transparent;
+  }
+
+  .admin-container {
+    max-width: 100%;
+    margin: 0;
+    display: grid;
+    gap: 30px;
+  }
+
+  .admin-table-card {
+    background: white;
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    border: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .admin-table-card h3 {
+    color: var(--verde-principal);
+    margin-top: 0;
+    font-size: 26px;
+    margin-bottom: 25px;
+    font-weight: 700;
+  }
+
+  /* Tabla */
+  .tabla-responsiva {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(18, 161, 80, 0.1);
+    min-height: 400px;
+    background: white;
+  }
+
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+
+  .admin-table thead {
+    background: rgba(18, 161, 80, 0.08);
+  }
+
+  .admin-table th {
+    padding: 20px 18px;
+    text-align: left;
+    color: var(--verde-principal);
+    font-weight: 700;
+    border-bottom: 2px solid rgba(18, 161, 80, 0.2);
+    font-size: 15px;
+  }
+
+  .admin-table td {
+    padding: 18px 18px;
+    border-bottom: 1px solid rgba(18, 161, 80, 0.1);
+    height: 60px;
+    vertical-align: middle;
+  }
+
+  .admin-table tr:hover {
+    background: rgba(18, 161, 80, 0.04);
+  }
+
+  .badge {
+    background: var(--verde-principal);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .badge-items {
+    background: rgba(244, 196, 48, 0.2);
+    color: #d4af37;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .items-tooltip-container {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+  }
+
+  .items-tooltip {
+    visibility: hidden;
+    width: 320px;
+    background-color: var(--verde-principal);
+    color: white;
+    text-align: left;
+    border-radius: 8px;
+    padding: 12px;
+    position: absolute;
+    z-index: 1000;
+    top: 110%;
+    right: 0;
+    opacity: 0;
+    transition: opacity var(--transicion);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: normal;
+  }
+
+  .items-tooltip strong {
+    display: block;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    padding-bottom: 8px;
+  }
+
+  .items-tooltip ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .items-tooltip li {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .items-tooltip li:last-child {
+    border-bottom: none;
+  }
+
+  .items-tooltip-container:hover .items-tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  .precio {
+    color: var(--naranja-principal);
+    font-weight: 700;
+  }
+
+  .estado {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  .estado-pendiente {
+    background: rgba(244, 196, 48, 0.2);
+    color: #d4af37;
+  }
+
+  .estado-proceso {
+    background: rgba(33, 150, 243, 0.15);
+    color: #2196f3;
+  }
+
+  .estado-completado {
+    background: rgba(18, 161, 80, 0.15);
+    color: var(--verde-principal);
+  }
+
+  .estado-cancelado {
+    background: rgba(240, 90, 55, 0.15);
+    color: var(--naranja-principal);
+  }
+
+  .acciones {
+    display: flex;
+    gap: 8px;
+  }
+
+  .form-estado {
+    margin: 0;
+  }
+
+  .select-estado {
+    padding: 6px 12px;
+    border: 2px solid var(--verde-principal);
+    border-radius: 6px;
+    color: var(--verde-principal);
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Poppins', Arial, sans-serif;
+    background: white;
+    transition: all 220ms ease;
+  }
+
+  .select-estado:hover {
+    background: rgba(18, 161, 80, 0.05);
+  }
+
+  .select-estado:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(18, 161, 80, 0.2);
+  }
+
+  .sin-datos {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    font-size: 16px;
+  }
+
+  /* Estadísticas */
+  .admin-stats {
+    background: white;
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    border: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .stat-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(18, 161, 80, 0.05), rgba(240, 90, 55, 0.04));
+    border: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .stat-icon {
+    font-size: 32px;
+    min-width: 50px;
+  }
+
+  .stat-info h4 {
+    margin: 0 0 5px;
+    color: var(--texto-oscuro);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .stat-number {
+    margin: 0;
+    color: var(--verde-principal);
+    font-size: 24px;
+    font-weight: 700;
+  }
+</style>

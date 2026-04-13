@@ -1,0 +1,626 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios | Admin{% endblock %}
+
+{% block content %}
+<section class="banner-titulo">
+  <h1>👥 Gestión de Usuarios</h1>
+  <p>Administra los usuarios registrados en el sistema</p>
+</section>
+
+<section class="admin-section">
+  <div class="admin-container">
+    
+    <div class="admin-table-card">
+      <h2>Usuarios del Sistema ({{ usuarios|length }})</h2>
+      
+      {% if usuarios %}
+        <div class="tabla-responsiva">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for usuario in usuarios %}
+              <tr>
+                <td><span class="badge">{{ usuario.id }}</span></td>
+                <td><strong>{{ usuario.nombre }}</strong></td>
+                <td>{{ usuario.email }}</td>
+                <td>
+                  {% if usuario.rol == "admin" %}
+                    <span class="rol rol-admin">⚙️ Admin</span>
+                  {% else %}
+                    <span class="rol rol-cliente">👤 Cliente</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if usuario.estado == "activo" %}
+                    <span class="estado-usuario estado-activo">🟢 Activo</span>
+                  {% else %}
+                    <span class="estado-usuario estado-inactivo">🔴 Inactivo</span>
+                  {% endif %}
+                </td>
+                <td class="acciones">
+                    <a href="#" class="btn-ver" data-usuario-id="{{ usuario.id }}" data-usuario-nombre="{{ usuario.nombre }}" data-usuario-email="{{ usuario.email }}" data-usuario-rol="{{ usuario.rol }}" data-usuario-estado="{{ usuario.estado }}" onclick="abrirModalVerDesdeBoton(this); return false;">👁️ Ver</a>
+                    <a href="#" class="btn-editar" data-usuario-id="{{ usuario.id }}" data-usuario-nombre="{{ usuario.nombre }}" data-usuario-email="{{ usuario.email }}" data-usuario-rol="{{ usuario.rol }}" data-usuario-estado="{{ usuario.estado }}" onclick="abrirModalEditarDesdeBoton(this); return false;">✏️ Editar</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="sin-datos">No hay usuarios registrados.</p>
+      {% endif %}
+    </div>
+
+    <!-- Resumen de usuarios -->
+    <div class="admin-stats">
+      <h2 style="color: var(--verde-principal); margin-bottom: 20px;">📊 Resumen de Usuarios</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <h3>Total de Usuarios</h3>
+            <p class="stat-number">{{ usuarios|length }}</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">⚙️</div>
+          <div class="stat-info">
+            <h3>Administradores</h3>
+            <p class="stat-number">{% set admins = usuarios|selectattr('rol', 'equalto', 'admin')|list %}{{ admins|length }}</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">👤</div>
+          <div class="stat-info">
+            <h3>Clientes</h3>
+            <p class="stat-number">{% set clientes = usuarios|selectattr('rol', 'equalto', 'cliente')|list %}{{ clientes|length }}</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">🟢</div>
+          <div class="stat-info">
+            <h3>Activos</h3>
+            <p class="stat-number">{% set activos = usuarios|selectattr('estado', 'equalto', 'activo')|list %}{{ activos|length }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- MODAL VER USUARIO -->
+<div id="modalVerUsuario" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>👁️ Detalles del Usuario</h3>
+      <button class="close-btn" onclick="cerrarModalVer()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="detalles-usuario">
+        <div class="detalle-item">
+          <label>ID</label>
+          <p id="ver-id"></p>
+        </div>
+        <div class="detalle-item">
+          <label>Nombre</label>
+          <p id="ver-nombre"></p>
+        </div>
+        <div class="detalle-item">
+          <label>Correo</label>
+          <p id="ver-correo"></p>
+        </div>
+        <div class="detalle-item">
+          <label>Rol</label>
+          <p id="ver-rol"></p>
+        </div>
+        <div class="detalle-item">
+          <label>Estado</label>
+          <p id="ver-estado"></p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cerrar" onclick="cerrarModalVer()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR USUARIO -->
+<div id="modalEditarUsuario" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>✏️ Editar Usuario</h3>
+      <button class="close-btn" onclick="cerrarModalEditar()">&times;</button>
+    </div>
+    <form id="formEditarUsuario">
+      <div class="modal-body">
+        <input type="hidden" id="editar-id">
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="editar-nombre" disabled style="background: #f0f0f0; cursor: not-allowed;">
+        </div>
+        <div class="form-group">
+          <label>Correo</label>
+          <input type="email" id="editar-correo" disabled style="background: #f0f0f0; cursor: not-allowed;">
+        </div>
+        <div class="form-group">
+          <label>Rol</label>
+          <select id="editar-rol">
+            <option value="cliente">👤 Cliente</option>
+            <option value="admin">⚙️ Administrador</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="editar-estado">
+            <option value="activo">🟢 Activo</option>
+            <option value="inactivo">🔴 Inactivo</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cerrar" onclick="cerrarModalEditar()">Cancelar</button>
+        <button type="submit" class="btn-modal-guardar">Guardar Cambios</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// --- MODALES USUARIOS ---
+function obtenerUsuarioDesdeBoton(btn) {
+  return {
+    id: btn.dataset.usuarioId,
+    nombre: btn.dataset.usuarioNombre,
+    email: btn.dataset.usuarioEmail,
+    rol: btn.dataset.usuarioRol,
+    estado: btn.dataset.usuarioEstado,
+  };
+}
+
+function abrirModalVerDesdeBoton(btn) {
+  abrirModalVer(obtenerUsuarioDesdeBoton(btn));
+}
+
+function abrirModalEditarDesdeBoton(btn) {
+  abrirModalEditar(obtenerUsuarioDesdeBoton(btn));
+}
+
+function abrirModalVer(usuario, id, nombre, email, rol, estado) {
+  if (typeof usuario !== 'object' || usuario === null) {
+    usuario = { id, nombre, email, rol, estado };
+  }
+  document.getElementById('ver-id').textContent = usuario.id;
+  document.getElementById('ver-nombre').textContent = usuario.nombre;
+  document.getElementById('ver-correo').textContent = usuario.email;
+  document.getElementById('ver-rol').textContent = usuario.rol === 'admin' ? 'Administrador' : 'Cliente';
+  document.getElementById('ver-estado').textContent = usuario.estado === 'activo' ? 'Activo' : 'Inactivo';
+  document.getElementById('modalVerUsuario').classList.add('activo');
+}
+function cerrarModalVer() {
+  document.getElementById('modalVerUsuario').classList.remove('activo');
+}
+
+function abrirModalEditar(usuario, id, nombre, email, rol, estado) {
+  if (typeof usuario !== 'object' || usuario === null) {
+    usuario = { id, nombre, email, rol, estado };
+  }
+  document.getElementById('editar-id').value = usuario.id;
+  document.getElementById('editar-nombre').value = usuario.nombre;
+  document.getElementById('editar-correo').value = usuario.email;
+  document.getElementById('editar-rol').value = usuario.rol;
+  document.getElementById('editar-estado').value = usuario.estado;
+  document.getElementById('modalEditarUsuario').classList.add('activo');
+}
+function cerrarModalEditar() {
+  document.getElementById('modalEditarUsuario').classList.remove('activo');
+}
+
+// Asignar eventos a los botones de la tabla
+window.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.btn-ver').forEach(function(btn, idx) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const row = btn.closest('tr');
+      const usuario = {
+        id: row.querySelector('.badge').textContent.trim(),
+        nombre: row.querySelector('td:nth-child(2)').textContent.trim(),
+        email: row.querySelector('td:nth-child(3)').textContent.trim(),
+        rol: row.querySelector('td:nth-child(4) .rol-admin, td:nth-child(4) .rol-cliente')?.classList.contains('rol-admin') ? 'admin' : 'cliente',
+        estado: row.querySelector('td:nth-child(5) .estado-activo, td:nth-child(5) .estado-inactivo')?.classList.contains('estado-activo') ? 'activo' : 'inactivo',
+      };
+      abrirModalVer(usuario);
+    });
+  });
+  document.querySelectorAll('.btn-editar').forEach(function(btn, idx) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const row = btn.closest('tr');
+      const usuario = {
+        id: row.querySelector('.badge').textContent.trim(),
+        nombre: row.querySelector('td:nth-child(2)').textContent.trim(),
+        email: row.querySelector('td:nth-child(3)').textContent.trim(),
+        rol: row.querySelector('td:nth-child(4) .rol-admin, td:nth-child(4) .rol-cliente')?.classList.contains('rol-admin') ? 'admin' : 'cliente',
+        estado: row.querySelector('td:nth-child(5) .estado-activo, td:nth-child(5) .estado-inactivo')?.classList.contains('estado-activo') ? 'activo' : 'inactivo',
+      };
+      abrirModalEditar(usuario);
+    });
+  });
+
+  // Enviar edición de usuario
+  const formEditar = document.getElementById('formEditarUsuario');
+  if (formEditar) {
+    formEditar.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const id = document.getElementById('editar-id').value;
+      const rol = document.getElementById('editar-rol').value;
+      const estado = document.getElementById('editar-estado').value;
+      fetch(`/admin/usuarios/editar/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `rol=${encodeURIComponent(rol)}&estado=${encodeURIComponent(estado)}`
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.exito) {
+          cerrarModalEditar();
+          window.location.reload();
+        } else {
+          alert('Error al guardar cambios');
+        }
+      })
+      .catch(() => alert('Error de red al guardar cambios'));
+    });
+  }
+});
+</script>
+<!-- Fin modales usuarios -->
+
+<style>
+  .admin-section {
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #f7f2e9, #ffffff);
+  }
+
+  .admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    gap: 30px;
+  }
+
+  .admin-table-card {
+    background: white;
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    border: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .admin-table-card h2 {
+    color: var(--verde-principal);
+    margin-top: 0;
+    font-size: 24px;
+    margin-bottom: 25px;
+  }
+
+  /* Tabla */
+  .tabla-responsiva {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .admin-table thead {
+    background: rgba(18, 161, 80, 0.08);
+  }
+
+  .admin-table th {
+    padding: 16px;
+    text-align: left;
+    color: var(--verde-principal);
+    font-weight: 700;
+    border-bottom: 2px solid rgba(18, 161, 80, 0.2);
+  }
+
+  .admin-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .admin-table tr:hover {
+    background: rgba(18, 161, 80, 0.04);
+  }
+
+  .badge {
+    background: var(--verde-principal);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .rol {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  .rol-admin {
+    background: rgba(240, 90, 55, 0.15);
+    color: var(--naranja-principal);
+  }
+
+  .rol-cliente {
+    background: rgba(18, 161, 80, 0.15);
+    color: var(--verde-principal);
+  }
+
+  .estado-usuario {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    display: inline-block;
+  }
+
+  .estado-activo {
+    background: rgba(18, 161, 80, 0.15);
+    color: var(--verde-principal);
+  }
+
+  .estado-inactivo {
+    background: rgba(200, 200, 200, 0.2);
+    color: #666;
+  }
+
+  .acciones {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn-ver,
+  .btn-editar {
+    padding: 6px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 12px;
+    transition: all 220ms ease;
+    display: inline-block;
+  }
+
+  .btn-ver {
+    background: rgba(33, 150, 243, 0.15);
+    color: #2196f3;
+  }
+
+  .btn-ver:hover {
+    background: rgba(33, 150, 243, 0.25);
+  }
+
+  .btn-editar {
+    background: rgba(18, 161, 80, 0.15);
+    color: var(--verde-principal);
+  }
+
+  .btn-editar:hover {
+    background: rgba(18, 161, 80, 0.25);
+  }
+
+  .sin-datos {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    font-size: 16px;
+  }
+
+  /* Estadísticas */
+  .admin-stats {
+    background: white;
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    border: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .stat-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(18, 161, 80, 0.05), rgba(240, 90, 55, 0.04));
+    border: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .stat-icon {
+    font-size: 32px;
+    min-width: 50px;
+  }
+
+  .stat-info h3 {
+    margin: 0 0 5px;
+    color: var(--texto-oscuro);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .stat-number {
+    margin: 0;
+    color: var(--verde-principal);
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  @media (max-width: 768px) {
+    .admin-table {
+      font-size: 12px;
+    }
+
+    .admin-table th,
+    .admin-table td {
+      padding: 10px 8px;
+    }
+
+    .btn-ver,
+    .btn-editar {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+  }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .modal.activo {
+    display: flex;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    width: min(92vw, 520px);
+    overflow: hidden;
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 30px;
+    border-bottom: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    color: var(--verde-principal);
+    font-size: 20px;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #999;
+    cursor: pointer;
+  }
+
+  .modal-body {
+    padding: 30px;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 30px;
+    border-top: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .detalles-usuario {
+    display: grid;
+    gap: 20px;
+  }
+
+  .detalle-item {
+    display: grid;
+    gap: 8px;
+  }
+
+  .detalle-item label,
+  .form-group label {
+    display: block;
+    font-weight: 700;
+    color: var(--verde-principal);
+    font-size: 13px;
+    text-transform: uppercase;
+  }
+
+  .detalle-item p {
+    margin: 0;
+    color: #333;
+    font-size: 15px;
+    padding: 12px;
+    background: rgba(18, 161, 80, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid var(--verde-principal);
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid rgba(18, 161, 80, 0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+
+  .btn-modal-cerrar,
+  .btn-modal-guardar {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .btn-modal-cerrar {
+    background: #f0f0f0;
+    color: #666;
+  }
+
+  .btn-modal-guardar {
+    background: var(--verde-principal);
+    color: white;
+  }
+</style>
+{% endblock %}

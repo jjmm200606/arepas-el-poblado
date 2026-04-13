@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio | Arepas El Poblado{% endblock %}
+
+{% block content %}
+<section class="hero-slider">
+  <div class="slide activo">
+    <div class="hero-banner">
+      <div class="hero-banner-imagen">
+        <img src="/static/img/slider/slide1.jpg" alt="Arepa con queso" class="hero-img">
+      </div>
+
+      <div class="hero-banner-texto">
+        <h1>¡Somos sabor y tradición en tu mesa!</h1>
+        <p>
+          En Arepas El Poblado trabajamos con dedicación para llevar a tus hogares
+          un producto de calidad, ideal para acompañar desayunos, comidas y momentos
+          especiales.
+        </p>
+
+        <div class="hero-botones">
+          <a href="/catalogo" class="btn-principal">Ver catálogo</a>
+          <a href="/carrito" class="btn-secundario">Ir al carrito</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide">
+    <div class="hero-banner">
+      <div class="hero-banner-imagen">
+        <img src="/static/img/slider/slide2.jpg" alt="Acompañante ideal" class="hero-img">
+      </div>
+
+      <div class="hero-banner-texto">
+        <h1>El acompañante ideal para tus preparaciones</h1>
+        <p>
+          Nuestras arepas son el complemento perfecto para compartir en familia,
+          acompañar tus recetas favoritas y disfrutar un sabor tradicional en cualquier momento.
+        </p>
+
+        <div class="hero-botones">
+          <a href="/catalogo" class="btn-principal">Ver catálogo</a>
+          <a href="/carrito" class="btn-secundario">Ir al carrito</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide">
+    <div class="hero-banner">
+      <div class="hero-banner-imagen">
+        <img src="/static/img/slider/slide3.jpg" alt="Producción de arepas" class="hero-img">
+      </div>
+
+      <div class="hero-banner-texto">
+        <h1>Arepas El Poblado en tu día a día</h1>
+        <p>
+          Elaboramos nuestras arepas con esfuerzo, dedicación y constancia para que
+          siempre tengas un producto confiable, práctico y delicioso en tu mesa.
+        </p>
+
+        <div class="hero-botones">
+          <a href="/catalogo" class="btn-principal">Ver catálogo</a>
+          <a href="/carrito" class="btn-secundario">Ir al carrito</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="slider-btn prev" onclick="cambiarSlide(-1)">❮</button>
+  <button class="slider-btn next" onclick="cambiarSlide(1)">❯</button>
+
+  <div class="slider-indicadores">
+    <span class="indicador activo" onclick="irASlide(0)"></span>
+    <span class="indicador" onclick="irASlide(1)"></span>
+    <span class="indicador" onclick="irASlide(2)"></span>
+  </div>
+</section>
+
+<section class="publicidad">
+  <h2>Lo mejor de nuestra empresa</h2>
+  <p>
+    En Arepas El Poblado ofrecemos variedad, calidad y atención para brindar una
+    experiencia confiable a nuestros clientes.
+  </p>
+
+  <div class="publicidad-cards">
+    <div class="card-publicidad">
+      <h3>Calidad</h3>
+      <p>Productos elaborados con dedicación y excelente sabor.</p>
+    </div>
+
+    <div class="card-publicidad">
+      <h3>Variedad</h3>
+      <p>Diferentes presentaciones para cada necesidad.</p>
+    </div>
+
+    <div class="card-publicidad">
+      <h3>Servicio</h3>
+      <p>Atención práctica y pedidos pensados para el cliente.</p>
+    </div>
+  </div>
+
+  <div class="imagenes-publicidad">
+    <div class="imagen-placeholder">Espacio para imagen de calidad</div>
+    <div class="imagen-placeholder">Espacio para imagen de variedad</div>
+    <div class="imagen-placeholder">Espacio para imagen de servicio</div>
+  </div>
+</section>
+
+<section class="proceso-arepa">
+  <div class="proceso-encabezado">
+    <h2>Así preparamos nuestras arepas</h2>
+    <p>
+      Conoce parte del proceso de elaboración que realizamos con dedicación,
+      tradición y cuidado en cada detalle.
+    </p>
+  </div>
+
+  <div class="pasos-proceso-grid">
+    <div class="paso-proceso-card">
+      <img src="/static/img/proceso/paso1.jpg" alt="Selección de ingredientes" class="img-paso-proceso">
+      <div class="contenido-paso">
+        <h3>Paso 1. Selección de ingredientes</h3>
+        <p>Escogemos ingredientes de calidad para garantizar buen sabor y excelente textura.</p>
+      </div>
+    </div>
+
+    <div class="paso-proceso-card">
+      <img src="/static/img/proceso/paso2.jpg" alt="Preparación de la mezcla" class="img-paso-proceso">
+      <div class="contenido-paso">
+        <h3>Paso 2. Preparación de la mezcla</h3>
+        <p>Realizamos la mezcla con el punto adecuado para conservar la tradición de nuestras arepas.</p>
+      </div>
+    </div>
+
+    <div class="paso-proceso-card">
+      <img src="/static/img/proceso/paso3.jpg" alt="Moldeado de arepas" class="img-paso-proceso">
+      <div class="contenido-paso">
+        <h3>Paso 3. Moldeado y formado</h3>
+        <p>Moldeamos cada arepa con cuidado para mantener su presentación y tamaño ideal.</p>
+      </div>
+    </div>
+
+    <div class="paso-proceso-card">
+      <img src="/static/img/proceso/paso4.jpg" alt="Cocción de arepas" class="img-paso-proceso">
+      <div class="contenido-paso">
+        <h3>Paso 4. Cocción final</h3>
+        <p>La cocción se realiza cuidadosamente para lograr una arepa dorada, suave y deliciosa.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="video-proceso-card">
+    <div class="videos-proceso-grid">
+      <video class="video-proceso-vertical" controls>
+        <source src="/static/videos/proceso-arepa-1.mp4" type="video/mp4">
+        Tu navegador no soporta video HTML5.
+      </video>
+
+      <video class="video-proceso-vertical" controls>
+        <source src="/static/videos/proceso-arepa-2.mp4" type="video/mp4">
+        Tu navegador no soporta video HTML5.
+      </video>
+    </div>
+  </div>
+</section>
+
+<script>
+  let slideActual = 0;
+  const slides = document.querySelectorAll(".slide");
+  const indicadores = document.querySelectorAll(".indicador");
+
+  function mostrarSlide(index) {
+    slides.forEach((slide) => slide.classList.remove("activo"));
+    indicadores.forEach((indicador) => indicador.classList.remove("activo"));
+
+    slides[index].classList.add("activo");
+    indicadores[index].classList.add("activo");
+  }
+
+  function cambiarSlide(direccion) {
+    slideActual += direccion;
+
+    if (slideActual < 0) {
+      slideActual = slides.length - 1;
+    }
+
+    if (slideActual >= slides.length) {
+      slideActual = 0;
+    }
+
+    mostrarSlide(slideActual);
+  }
+
+  function irASlide(index) {
+    slideActual = index;
+    mostrarSlide(slideActual);
+  }
+</script>
+{% endblock %}

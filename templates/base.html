@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#12a150">
+  <title>{% block title %}Arepas El Poblado{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <script>
+    window.cartStore = (() => {
+      const currentUserEmail = {{ usuario.email|tojson if usuario else 'null' }};
+      const legacyKey = 'carrito';
+
+      function getStorage() {
+        return currentUserEmail ? window.localStorage : window.sessionStorage;
+      }
+
+      function getKey() {
+        return currentUserEmail ? `carrito_${currentUserEmail}` : legacyKey;
+      }
+
+      function normalize(cart) {
+        return Array.isArray(cart) ? cart : [];
+      }
+
+      function migrateLegacyCart() {
+        if (!currentUserEmail) {
+          return;
+        }
+
+        const targetKey = getKey();
+        const existing = window.localStorage.getItem(targetKey);
+        const legacy = window.localStorage.getItem(legacyKey);
+
+        if (!existing && legacy) {
+          window.localStorage.setItem(targetKey, legacy);
+        }
+
+        window.localStorage.removeItem(legacyKey);
+      }
+
+      function read() {
+        migrateLegacyCart();
+        try {
+          return normalize(JSON.parse(getStorage().getItem(getKey()) || '[]'));
+        } catch (error) {
+          console.warn('No se pudo leer el carrito', error);
+          return [];
+        }
+      }
+
+      function write(cart) {
+        getStorage().setItem(getKey(), JSON.stringify(normalize(cart)));
+      }
+
+      function clear() {
+        getStorage().removeItem(getKey());
+      }
+
+      function isPersistent() {
+        return Boolean(currentUserEmail);
+      }
+
+      migrateLegacyCart();
+
+      return {
+        read,
+        write,
+        clear,
+        isPersistent,
+      };
+    })();
+  </script>
+</head>
+<body>
+
+  <header class="header-superior">
+    <a href="/" class="logo-area">
+      <img src="/static/img/logo.png" alt="Logo Arepas El Poblado" class="logo-img">
+    </a>
+
+    <!-- NAVBAR HORIZONTAL PARA PC -->
+    <nav class="navbar-desktop">
+      <a href="/" class="nav-link">Inicio</a>
+      <a href="/catalogo" class="nav-link">Catálogo</a>
+      <a href="/contacto" class="nav-link">Contáctanos</a>
+      
+      {% if usuario and usuario.rol == "admin" %}
+        <a href="/admin" class="nav-link nav-admin">Administrar</a>
+      {% endif %}
+    </nav>
+
+    <div class="acciones-derecha">
+      <a href="/carrito" class="link-carrito-header">🛒 Carrito</a>
+      
+      {% if usuario %}
+        <a href="/logout" class="nav-link nav-login">👤 Cerrar sesión</a>
+      {% else %}
+        <a href="/login" class="nav-link nav-login">👤 Iniciar sesión</a>
+      {% endif %}
+      <!-- HAMBURGUESA SOLO PARA MÓVIL -->
+      <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- SIDEBAR DESLIZABLE -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Menú</span>
+      <button class="close-sidebar" id="closeSidebar">✕</button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/">🏠 Inicio</a>
+      <a href="/catalogo">📋 Catálogo</a>
+      <a href="/contacto">📞 Contáctanos</a>
+
+      {% if usuario and usuario.rol == "admin" %}
+        <div class="separator"></div>
+        <div class="admin-section">
+          <a href="/admin">⚙️ Administrar</a>
+        </div>
+      {% endif %}
+
+      <div class="separator"></div>
+
+      {% if usuario %}
+        <a href="/logout">👤 Cerrar sesión</a>
+      {% else %}
+        <a href="/login">👤 Iniciar sesión</a>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <!-- OVERLAY -->
+  <div class="overlay" id="overlay"></div>
+
+  <main class="contenido-principal">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="footer-contenido">
+      <div class="footer-col">
+        <h3>Arepas El Poblado</h3>
+        <p>Disfruta arepas frescas y hechas con cariño. Gracias por preferirnos.</p>
+      </div>
+
+      <div class="footer-col">
+        <h3>Enlaces rápidos</h3>
+        <a href="/">Inicio</a>
+        <a href="/catalogo">Catálogo</a>
+        <a href="/contacto">Contáctanos</a>
+      </div>
+
+      <div class="footer-col">
+        <h3>Contáctanos</h3>
+        <p>📍 Medellín, Colombia</p>
+        <p>✉️ contacto@arepaselpoblado.com</p>
+        <p>📞 +57 300 123 4567</p>
+      </div>
+    </div>
+
+    <div class="footer-copyright">
+      © <span id="footerYear"></span> Arepas El Poblado. Todos los derechos reservados.
+    </div>
+  </footer>
+
+  <script>
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const closeSidebar = document.getElementById('closeSidebar');
+    const sidebarLinks = document.querySelectorAll('.sidebar-nav a');
+
+    if (menuToggle && sidebar && overlay) {
+      // Abrir sidebar
+      menuToggle.addEventListener('click', () => {
+        const expanded = menuToggle.getAttribute('aria-expanded') === 'true';
+        menuToggle.setAttribute('aria-expanded', String(!expanded));
+        sidebar.classList.toggle('abierto');
+        overlay.classList.toggle('visible');
+      });
+
+      // Cerrar sidebar con botón
+      closeSidebar.addEventListener('click', () => {
+        menuToggle.setAttribute('aria-expanded', 'false');
+        sidebar.classList.remove('abierto');
+        overlay.classList.remove('visible');
+      });
+
+      // Cerrar sidebar al hacer click en overlay
+      overlay.addEventListener('click', () => {
+        menuToggle.setAttribute('aria-expanded', 'false');
+        sidebar.classList.remove('abierto');
+        overlay.classList.remove('visible');
+      });
+
+      // Cerrar sidebar al hacer click en un link
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          menuToggle.setAttribute('aria-expanded', 'false');
+          sidebar.classList.remove('abierto');
+          overlay.classList.remove('visible');
+        });
+      });
+    }
+
+    const footerYear = document.getElementById('footerYear');
+    if (footerYear) {
+      footerYear.textContent = new Date().getFullYear();
+    }
+
+    // ========== FUNCIONES GLOBALES PARA AJAX EN ADMIN ==========
+    
+    // Función para cambiar estado de pedido
+    window.cambiarEstado = function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const selectElement = event.target;
+      const pedidoId = selectElement.dataset.pedidoId;
+      const estado = selectElement.value;
+      const row = selectElement.closest('tr');
+
+      if (!pedidoId || !row) return;
+
+      fetch(`/admin/pedidos/actualizar/${pedidoId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'estado=' + encodeURIComponent(estado)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.exito) {
+          selectElement.style.background = '#d4f7d4';
+          setTimeout(() => selectElement.style.background = '', 800);
+          
+          // Actualizar el estado visual en la columna Estado Actual
+          const estadoActualTd = row.querySelector('td:nth-child(6)');
+          if (estadoActualTd) {
+            let html = '';
+            if (estado === 'Pendiente') html = '<span class="estado estado-pendiente">⏳ Pendiente</span>';
+            else if (estado === 'En proceso') html = '<span class="estado estado-proceso">⚙️ En proceso</span>';
+            else if (estado === 'Completado') html = '<span class="estado estado-completado">✓ Completado</span>';
+            else if (estado === 'Cancelado') html = '<span class="estado estado-cancelado">✕ Cancelado</span>';
+            estadoActualTd.innerHTML = html;
+          }
+        }
+      })
+      .catch(() => {
+        selectElement.style.background = '#ffd6d6';
+        setTimeout(() => selectElement.style.background = '', 800);
+      });
+    };
+
+    // Función para eliminar pedido
+    window.eliminarPedido = function(pedidoId, buttonElement) {
+      if (!confirm('¿Estás seguro de que deseas eliminar este pedido?')) {
+        return;
+      }
+      
+      fetch(`/admin/pedidos/eliminar/${pedidoId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.exito) {
+          const row = buttonElement.closest('tr');
+          row.style.transition = 'opacity 0.3s';
+          row.style.opacity = '0';
+          setTimeout(() => row.remove(), 300);
+          alert('Pedido eliminado exitosamente');
+        }
+      });
+    };
+  </script>
+
+</body>
+</html>

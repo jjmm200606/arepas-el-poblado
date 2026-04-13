@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Pedido | Arepas El Poblado{% endblock %}
+
+{% block content %}
+<section class="banner-titulo">
+  <h1>Finalizar pedido</h1>
+</section>
+
+<section class="pedido-wrapper">
+  <div class="pedido-grid">
+    <section class="formulario-pedido">
+      <h2>Datos del cliente</h2>
+
+      <form id="formPedido">
+        <div class="grupo-campo">
+          <label for="nombre">Nombre completo</label>
+          <input type="text" id="nombre" name="nombre" required>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="telefono">Teléfono</label>
+          <input type="text" id="telefono" name="telefono" required>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="direccion">Dirección</label>
+          <input type="text" id="direccion" name="direccion" required>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="metodoPago">Método de pago</label>
+          <select id="metodoPago" name="metodoPago" required>
+            <option value="">Seleccione una opción</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Nequi">Nequi</option>
+            <option value="Daviplata">Daviplata</option>
+          </select>
+        </div>
+
+        <div class="grupo-campo grupo-campo-full">
+          <label for="observaciones">Observaciones</label>
+          <textarea
+            id="observaciones"
+            name="observaciones"
+            rows="5"
+            placeholder="Ejemplo: sin sal, entregar después de las 5 pm"
+          ></textarea>
+        </div>
+
+        <button type="submit" class="boton boton-full">Finalizar pedido</button>
+      </form>
+    </section>
+
+    <section class="resumen-pedido">
+      <h2>Resumen del pedido</h2>
+      <div id="resumenCarrito"></div>
+      <h3 id="totalResumen">Total: $0</h3>
+    </section>
+  </div>
+</section>
+
+<script>
+  function cargarResumenPedido() {
+    const resumen = document.getElementById("resumenCarrito");
+    const totalResumen = document.getElementById("totalResumen");
+    let carrito = window.cartStore.read();
+
+    if (carrito.length === 0) {
+      resumen.innerHTML = `
+        <div class="pedido-vacio">
+          <p>No hay productos en el carrito.</p>
+          <a href="/catalogo" class="boton">Ir al catálogo</a>
+        </div>
+      `;
+      totalResumen.textContent = "Total: $0";
+      return;
+    }
+
+    let html = "";
+    let total = 0;
+
+    carrito.forEach((item) => {
+      const subtotal = item.precio * item.cantidad;
+      total += subtotal;
+
+      html += `
+        <div class="item-resumen">
+          <h4>${item.nombre}</h4>
+          <p>Cantidad: ${item.cantidad}</p>
+          <p>Precio unitario: $${item.precio.toLocaleString("es-CO")}</p>
+          <p class="subtotal-resumen">Subtotal: $${subtotal.toLocaleString("es-CO")}</p>
+        </div>
+      `;
+    });
+
+    resumen.innerHTML = html;
+    totalResumen.textContent = "Total: $" + total.toLocaleString("es-CO");
+  }
+
+  document.getElementById("formPedido").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    let carrito = window.cartStore.read();
+
+    if (carrito.length === 0) {
+      alert("No puedes finalizar un pedido sin productos en el carrito.");
+      return;
+    }
+
+    // Calcular total
+    const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+
+    const pedido = {
+      nombre: document.getElementById("nombre").value,
+      telefono: document.getElementById("telefono").value,
+      direccion: document.getElementById("direccion").value,
+      metodoPago: document.getElementById("metodoPago").value,
+      observaciones: document.getElementById("observaciones").value,
+      productos: carrito,
+      total: total,
+      cantidad_items: carrito.reduce((sum, item) => sum + item.cantidad, 0)
+    };
+
+    // Enviar pedido al servidor
+    fetch("/api/crear-pedido", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(pedido)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.exito) {
+        window.cartStore.clear();
+        alert("¡Pedido registrado correctamente! Número de pedido: #" + data.id_pedido);
+        window.location.href = "/";
+      } else {
+        alert("Error al procesar el pedido: " + data.mensaje);
+      }
+    })
+    .catch(error => {
+      console.error("Error:", error);
+      alert("Error al enviar el pedido. Por favor intenta de nuevo.");
+    });
+  });
+
+  cargarResumenPedido();
+</script>
+{% endblock %}

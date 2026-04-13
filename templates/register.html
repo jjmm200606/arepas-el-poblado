@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Registro | Arepas El Poblado{% endblock %}
+
+{% block content %}
+<section class="banner-titulo">
+  <h1>Crear cuenta</h1>
+</section>
+
+<section class="login-wrapper">
+  <div class="login-card registro-card">
+    <h2>Registro de nuevo usuario</h2>
+
+    {% if error %}
+      <p class="mensaje-error">{{ error }}</p>
+    {% endif %}
+
+    {% if exito %}
+      <p class="mensaje-exito">¡Cuenta creada exitosamente! <a href="/login">Inicia sesión aquí</a></p>
+    {% endif %}
+
+    <form method="post" action="/register" class="form-registro">
+      <div class="grupo-campo">
+        <label for="nombre">Nombre completo</label>
+        <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre completo">
+      </div>
+
+      <div class="grupo-campo">
+        <label for="correo">Correo electrónico</label>
+        <input type="email" id="correo" name="correo" required placeholder="tu@correo.com">
+      </div>
+
+      <div class="grupo-campo">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" name="password" required placeholder="Mínimo 6 caracteres">
+        <small style="color: #666;">La contraseña debe tener al menos 6 caracteres</small>
+      </div>
+
+      <div class="grupo-campo">
+        <label for="password_confirm">Confirmar contraseña</label>
+        <input type="password" id="password_confirm" name="password_confirm" required placeholder="Confirma tu contraseña">
+      </div>
+
+      <button type="submit" class="boton boton-full">Crear cuenta</button>
+    </form>
+
+    <div class="enlace-login">
+      <p>¿Ya tienes cuenta? <a href="/login">Inicia sesión aquí</a></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .registro-card {
+    max-width: 450px;
+  }
+
+  .form-registro {
+    margin: 30px 0;
+  }
+
+  .grupo-campo {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .grupo-campo label {
+    font-weight: 600;
+    color: var(--verde-principal);
+    font-size: 14px;
+  }
+
+  .grupo-campo input {
+    padding: 12px 14px;
+    border: 2px solid rgba(18, 161, 80, 0.2);
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 220ms ease;
+    font-family: inherit;
+  }
+
+  .grupo-campo input:focus {
+    outline: none;
+    border-color: var(--verde-principal);
+    box-shadow: 0 0 0 3px rgba(18, 161, 80, 0.1);
+  }
+
+  .grupo-campo small {
+    font-size: 13px;
+    color: #999;
+    margin-top: -4px;
+  }
+
+  .boton-full {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--verde-principal), #0f8a3f);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 220ms ease;
+  }
+
+  .boton-full:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(18, 161, 80, 0.3);
+  }
+
+  .boton-full:active {
+    transform: translateY(0);
+  }
+
+  .mensaje-error {
+    background: rgba(240, 90, 55, 0.15);
+    color: var(--naranja-principal);
+    padding: 14px;
+    border-radius: 8px;
+    border-left: 4px solid var(--naranja-principal);
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+
+  .mensaje-exito {
+    background: rgba(18, 161, 80, 0.15);
+    color: var(--verde-principal);
+    padding: 14px;
+    border-radius: 8px;
+    border-left: 4px solid var(--verde-principal);
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+
+  .mensaje-exito a {
+    color: var(--verde-principal);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .mensaje-exito a:hover {
+    text-decoration: underline;
+  }
+
+  .enlace-login {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .enlace-login p {
+    margin: 0;
+    color: #666;
+    font-size: 15px;
+  }
+
+  .enlace-login a {
+    color: var(--verde-principal);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 220ms ease;
+  }
+
+  .enlace-login a:hover {
+    color: var(--naranja-principal);
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}

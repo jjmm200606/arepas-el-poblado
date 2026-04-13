@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Contáctanos | Arepas El Poblado{% endblock %}
+
+{% block content %}
+<section class="hero-portada-logo">
+  <div class="hero-overlay"></div>
+
+  <div class="hero-contenido">
+    <p class="hero-ruta">Inicio &nbsp;›&nbsp; Contáctanos</p>
+    <h1 class="hero-titulo">Contáctanos</h1>
+    <div class="hero-decoracion"></div>
+  </div>
+</section>
+
+<section class="contacto-wrapper">
+  <div class="contacto-grid">
+    <section class="contacto-info">
+      <h2>Información de contacto</h2>
+
+      <div class="contacto-card">
+        <h3>📍 Dirección</h3>
+        <p>Villavicencio, Meta, Colombia</p>
+      </div>
+
+      <div class="contacto-card">
+        <h3>📞 Teléfono</h3>
+        <p>310 000 0000</p>
+      </div>
+
+      <div class="contacto-card">
+        <h3>✉️ Correo electrónico</h3>
+        <p>contacto@arepaselpoblado.com</p>
+      </div>
+
+      <div class="contacto-card">
+        <h3>🕒 Horario de atención</h3>
+        <p>Lunes a sábado: 7:00 a. m. - 6:00 p. m.</p>
+      </div>
+
+      <div class="contacto-card">
+        <h3>💬 WhatsApp</h3>
+        <p>+57 310 000 0000</p>
+      </div>
+    </section>
+
+    <section class="contacto-formulario">
+      <h2>Envíanos un mensaje</h2>
+
+      <form id="formContacto" class="form-contacto">
+        <div class="grupo-campo">
+          <label for="nombre">Nombre completo</label>
+          <input type="text" id="nombre" name="nombre" required>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="correo">Correo electrónico</label>
+          <input type="email" id="correo" name="correo" required>
+        </div>
+
+        <div class="grupo-campo">
+          <label for="telefono">Teléfono</label>
+          <input type="text" id="telefono" name="telefono">
+        </div>
+
+        <div class="grupo-campo">
+          <label for="asunto">Asunto</label>
+          <input type="text" id="asunto" name="asunto" required>
+        </div>
+
+        <div class="grupo-campo grupo-campo-full">
+          <label for="mensaje">Mensaje</label>
+          <textarea id="mensaje" name="mensaje" rows="6" required></textarea>
+        </div>
+
+        <button type="submit" class="boton boton-full">Enviar mensaje</button>
+      </form>
+    </section>
+  </div>
+</section>
+
+<section class="mapa-wrapper">
+  <div class="mapa-card-final">
+    <div class="mapa-encabezado-final">
+      <h2>Ubicación</h2>
+      <p>Encuéntranos fácilmente en Villavicencio, Meta.</p>
+    </div>
+
+    <div class="mapa-centro-final">
+      <div class="mapa-link-final">
+        <div class="mapa-chip-final">Google Maps</div>
+
+        <iframe
+          class="mapa-real-final"
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d387.20072569742644!2d-73.60762279446097!3d4.149425198424234!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3e2dc67942c055%3A0xcf6ad3a0e28bb27!2sarepaselpoblado!5e0!3m2!1ses!2sco!4v1773703154425!5m2!1ses!2sco"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen="">
+        </iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.getElementById("formContacto").addEventListener("submit", function(event) {
+    event.preventDefault();
+    alert("Mensaje enviado correctamente.");
+    document.getElementById("formContacto").reset();
+  });
+</script>
+{% endblock %}

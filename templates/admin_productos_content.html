@@ -1,0 +1,502 @@
+<h2 style="margin-top: 0; color: var(--verde-principal); font-size: 28px;">📦 Gestión de Productos</h2>
+
+<!-- Tabla de productos del catálogo -->
+<div class="admin-table-card">
+  <h3 style="margin-top: 0;">Productos del Catálogo ({{ productos|length }})</h3>
+  
+  {% if productos %}
+    <div class="tabla-responsiva">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for producto in productos %}
+          <tr>
+            <td><span class="badge">{{ producto.id }}</span></td>
+            <td><strong>{{ producto.nombre }}</strong></td>
+            <td>{{ producto.descripcion }}</td>
+            <td><span class="precio">$ {{ producto.precio|string }}</span></td>
+            <td>
+              {% if producto.stock > 20 %}
+                <span class="stock stock-alto">{{ producto.stock }} ✓</span>
+              {% elif producto.stock > 10 %}
+                <span class="stock stock-medio">{{ producto.stock }} ⚠</span>
+              {% else %}
+                <span class="stock stock-bajo">{{ producto.stock }} ❌</span>
+              {% endif %}
+            </td>
+            <td>
+              <button class="btn-editar" 
+                data-producto-id="{{ producto.id }}"
+                data-producto-nombre="{{ producto.nombre }}"
+                data-producto-precio="{{ producto.precio }}"
+                data-producto-stock="{{ producto.stock }}"
+                onclick="abrirModalEditar(this)">
+                ✏️ Editar
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="sin-datos">No hay productos registrados.</p>
+  {% endif %}
+</div>
+
+<!-- Formulario para agregar nuevo producto personalizado -->
+<div class="admin-form-card">
+  <h2>➕ Agregar Nuevo Producto Personalizado</h2>
+  <p class="subtitulo">Usa esta opción para crear productos nuevos no incluidos en el catálogo estándar</p>
+  
+  <form action="/admin/productos/crear" method="post" class="admin-form">
+    <div class="form-group">
+      <label for="nombre">Nombre del Producto</label>
+      <input type="text" id="nombre" name="nombre" required placeholder="Ej: Arepa de Camarones">
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="precio">Precio ($)</label>
+        <input type="number" id="precio" name="precio" required placeholder="5000" min="1000">
+      </div>
+
+      <div class="form-group">
+        <label for="stock">Stock disponible</label>
+        <input type="number" id="stock" name="stock" required placeholder="50" min="0">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" name="descripcion" required placeholder="Describe el producto..." rows="4"></textarea>
+    </div>
+
+    <button type="submit" class="btn-principal">➕ Crear Producto Personalizado</button>
+  </form>
+</div>
+
+<!-- Modal para editar producto -->
+<div id="modalEditar" class="modal">
+  <div class="modal-contenido">
+    <div class="modal-header">
+      <h2>✏️ Editar Producto</h2>
+      <button class="modal-close" onclick="cerrarModal()">&times;</button>
+    </div>
+    
+    <form id="formEditar" method="post" class="admin-form">
+      <div class="form-group">
+        <label>Nombre del Producto</label>
+        <input type="text" id="nombreProducto" disabled class="input-disabled">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="precioEditar">Precio ($)</label>
+          <input type="number" id="precioEditar" name="precio" required min="1000">
+        </div>
+
+        <div class="form-group">
+          <label for="stockEditar">Stock disponible</label>
+          <input type="number" id="stockEditar" name="stock" required min="0">
+        </div>
+      </div>
+
+      <div class="form-acciones">
+        <button type="submit" class="btn-guardar">💾 Guardar Cambios</button>
+        <button type="button" class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .admin-section {
+    padding: 0;
+    background: transparent;
+  }
+
+  .admin-container {
+    max-width: 100%;
+    margin: 0;
+    display: grid;
+    gap: 30px;
+  }
+
+  .admin-form-card,
+  .admin-table-card {
+    background: white;
+    border-radius: 18px;
+    padding: 30px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    border: 2px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .admin-form-card h2,
+  .admin-table-card h2 {
+    color: var(--verde-principal);
+    margin-top: 0;
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  .admin-table-card h3 {
+    color: var(--verde-principal);
+    margin-top: 0;
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+
+  .subtitulo {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  .admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group label {
+    color: var(--texto-oscuro);
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    padding: 12px 16px;
+    border: 2px solid rgba(18, 161, 80, 0.2);
+    border-radius: 10px;
+    font-family: 'Poppins', Arial, sans-serif;
+    font-size: 14px;
+    transition: all 220ms ease;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--verde-principal);
+    box-shadow: 0 0 0 3px rgba(18, 161, 80, 0.1);
+  }
+
+  .input-disabled {
+    background-color: #f5f5f5 !important;
+    cursor: not-allowed !important;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .btn-principal,
+  .btn-guardar {
+    padding: 14px 24px;
+    background: linear-gradient(135deg, var(--verde-principal), #0d7f3f);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 220ms ease;
+    font-size: 15px;
+  }
+
+  .btn-principal:hover,
+  .btn-guardar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(18, 161, 80, 0.3);
+  }
+
+  /* Tabla */
+  .tabla-responsiva {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .admin-table thead {
+    background: rgba(18, 161, 80, 0.08);
+  }
+
+  .admin-table th {
+    padding: 16px;
+    text-align: left;
+    color: var(--verde-principal);
+    font-weight: 700;
+    border-bottom: 2px solid rgba(18, 161, 80, 0.2);
+  }
+
+  .admin-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(18, 161, 80, 0.1);
+  }
+
+  .admin-table tr:hover {
+    background: rgba(18, 161, 80, 0.04);
+  }
+
+  .badge {
+    background: var(--verde-principal);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .precio {
+    color: var(--naranja-principal);
+    font-weight: 700;
+  }
+
+  .stock {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .stock-alto {
+    background: rgba(18, 161, 80, 0.15);
+    color: var(--verde-principal);
+  }
+
+  .stock-medio {
+    background: rgba(244, 196, 48, 0.2);
+    color: #d4af37;
+  }
+
+  .stock-bajo {
+    background: rgba(240, 90, 55, 0.15);
+    color: var(--naranja-principal);
+  }
+
+  .btn-editar {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(18, 161, 80, 0.15);
+    color: var(--verde-principal);
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 220ms ease;
+  }
+
+  .btn-editar:hover {
+    background: rgba(18, 161, 80, 0.25);
+  }
+
+  .sin-datos {
+    text-align: center;
+    color: #999;
+    padding: 40px 20px;
+    font-size: 16px;
+  }
+
+  /* Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 220ms ease;
+  }
+
+  .modal.activo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-contenido {
+    background: white;
+    border-radius: 18px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+    animation: slideUp 220ms ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .modal-header h2 {
+    color: var(--verde-principal);
+    margin: 0;
+    font-size: 20px;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #999;
+    transition: color 220ms ease;
+  }
+
+  .modal-close:hover {
+    color: var(--verde-principal);
+  }
+
+  .form-acciones {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  /* OPTIMIZACIÓN MÓVIL */
+  @media (max-width: 768px) {
+    .admin-table-card {
+      padding: 16px;
+    }
+
+    .admin-table-card h3 {
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .tabla-responsiva {
+      overflow-x: visible;
+      border-radius: 8px;
+    }
+
+    /* Convertir tabla a cards en mobile */
+    .admin-table,
+    .admin-table thead,
+    .admin-table tbody,
+    .admin-table th,
+    .admin-table td,
+    .admin-table tr {
+      display: block;
+      width: 100%;
+    }
+
+    .admin-table thead {
+      display: none;
+    }
+
+    .admin-table tr {
+      background: white;
+      border: 2px solid rgba(18, 161, 80, 0.12);
+      border-radius: 10px;
+      margin-bottom: 14px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .admin-table td {
+      padding: 10px 0;
+      border: none;
+      border-bottom: 1px solid rgba(18, 161, 80, 0.1);
+      display: block;
+      text-align: left;
+    }
+
+    .admin-table td:last-child {
+      border-bottom: none;
+    }
+
+    .admin-table td:before {
+      content: attr(data-label);
+      font-weight: 700;
+      color: var(--verde-principal);
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    /* Etiquetas específicas para cada columna */
+    .admin-table td:nth-child(1):before { content: "ID"; }
+    .admin-table td:nth-child(2):before { content: "Nombre"; }
+    .admin-table td:nth-child(3):before { content: "Descripción"; }
+    .admin-table td:nth-child(4):before { content: "Precio"; }
+    .admin-table td:nth-child(5):before { content: "Stock"; }
+    .admin-table td:nth-child(6):before { content: "Acción"; }
+
+    .badge {
+      font-size: 12px;
+      padding: 5px 8px;
+    }
+
+    .precio {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .btn-editar {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .stock {
+      font-size: 13px;
+      padding: 5px 10px;
+    }
+
+    .modal-contenido {
+      padding: 20px;
+      max-width: 95%;
+    }
+
+    .modal-header h2 {
+      font-size: 18px;
+    }
+
+    input,
+    textarea,
+    select {
+      padding: 10px 12px;
+      font-size: 15px;
+    }
+  }
+</style>
+
