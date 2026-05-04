@@ -40,7 +40,12 @@ from .models import (
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-AUTH_STORE_PATH = BASE_DIR / "data" / "auth_state.json"
+AUTH_STORE_PATH = Path(
+    os.getenv(
+        "AUTH_STORE_PATH",
+        "/tmp/auth_state.json" if os.getenv("VERCEL") else str(BASE_DIR / "data" / "auth_state.json"),
+    )
+)
 
 app.add_middleware(
     SessionMiddleware,
