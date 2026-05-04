@@ -15,7 +15,7 @@
       Escríbenos y te responderemos pronto.
     </p>
 
-    <form id="formContacto" class="form-contacto">
+    <form id="formContacto" class="form-contacto" method="post" action="/contacto">
       <div class="grupo-campo">
         <label for="nombre">Nombre*</label>
         <input type="text" id="nombre" name="nombre" placeholder="Ingresa tu nombre y apellido" required>
@@ -51,7 +51,7 @@
     <span class="contacto-icono">☎</span>
     <div>
       <h2>Teléfono de contacto</h2>
-      <p>310 000 0000</p>
+      <p>314 356 7193 - 320 951 4057 - 350 759 8463</p>
     </div>
   </article>
 
@@ -59,12 +59,12 @@
     <span class="contacto-icono">✉</span>
     <div>
       <h2>Correo electrónico</h2>
-      <p>contacto@arepaselpoblado.com</p>
+      <p>arepaspoblado@gmail.com</p>
     </div>
   </article>
 
   <article class="contacto-dato-card">
-    <span class="contacto-icono">⌖</span>
+    <span class="contacto-icono">◉</span>
     <div>
       <h2>Ubicación</h2>
       <p>Villavicencio, Meta, Colombia</p>
@@ -103,15 +103,23 @@
   </div>
 </section>
 
+{% if enviado %}
 <script>
-  document.getElementById("formContacto").addEventListener("submit", function(event) {
-    event.preventDefault();
-    window.showAppAlert("Mensaje enviado correctamente.", {
+  window.addEventListener("load", function() {
+    window.showAppAlert("Recibimos tu mensaje y te responderemos pronto.", {
       title: "Gracias por escribirnos",
       variant: "success",
-    }).then(() => {
-      document.getElementById("formContacto").reset();
     });
   });
 </script>
+{% elif error_envio %}
+<script>
+  window.addEventListener("load", function() {
+    window.showAppAlert("No pudimos enviar tu mensaje en este momento. Intenta de nuevo en unos minutos.", {
+      title: "Error al enviar",
+      variant: "error",
+    });
+  });
+</script>
+{% endif %}
 {% endblock %}

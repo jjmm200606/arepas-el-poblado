@@ -557,12 +557,61 @@ def resultado_pago_wompi(request: Request):
 
 
 @app.get("/contacto", response_class=HTMLResponse)
-def contacto(request: Request):
+def contacto(request: Request, enviado: int = 0, error: int = 0):
     usuario = obtener_usuario(request)
     return templates.TemplateResponse("contacto.html", {
         "request": request,
-        "usuario": usuario
+        "usuario": usuario,
+        "enviado": bool(enviado),
+        "error_envio": bool(error),
     })
+
+
+@app.post("/contacto", response_class=HTMLResponse)
+def enviar_contacto(
+    request: Request,
+    nombre: str = Form(...),
+    telefono: str = Form(...),
+    correo: str = Form(...),
+    mensaje: str = Form(...),
+):
+    destinatario = (
+        os.getenv("CONTACT_RECEIVER")
+        or os.getenv("SMTP_FROM")
+        or os.getenv("SMTP_USER")
+        or "contacto@arepaselpoblado.com"
+    )
+
+    asunto = f"Nuevo mensaje de contacto - {nombre}"
+    mensaje_texto = (
+        "Se recibio un nuevo mensaje desde el formulario de contacto.\n\n"
+        f"Nombre: {nombre}\n"
+        f"Telefono: {telefono}\n"
+        f"Correo: {correo}\n\n"
+        "Mensaje:\n"
+        f"{mensaje}\n"
+    )
+    mensaje_html = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; background: #f8f8f5; color: #173f35; padding: 24px;">
+        <div style="max-width: 680px; margin: 0 auto; background: #ffffff; border-radius: 14px; padding: 28px; border: 1px solid #e7ece8;">
+          <h1 style="margin: 0 0 18px; color: #0f9f57;">Nuevo mensaje de contacto</h1>
+          <p style="margin: 0 0 18px;">Llego un mensaje desde el formulario web de Arepas El Poblado.</p>
+          <div style="background: #f7fbf7; border: 1px solid #dcebdd; border-radius: 12px; padding: 18px;">
+            <p style="margin: 0 0 10px;"><strong>Nombre:</strong> {nombre}</p>
+            <p style="margin: 0 0 10px;"><strong>Telefono:</strong> {telefono}</p>
+            <p style="margin: 0 0 10px;"><strong>Correo:</strong> {correo}</p>
+            <p style="margin: 0;"><strong>Mensaje:</strong><br>{mensaje.replace(chr(10), '<br>')}</p>
+          </div>
+        </div>
+      </body>
+    </html>
+    """
+
+    enviado_ok = enviar_correo(destinatario, asunto, mensaje_texto, html=mensaje_html)
+    if enviado_ok:
+        return RedirectResponse(url="/contacto?enviado=1", status_code=303)
+    return RedirectResponse(url="/contacto?error=1", status_code=303)
 
 
 @app.get("/login", response_class=HTMLResponse)

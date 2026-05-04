@@ -8,13 +8,13 @@
   <aside class="admin-sidebar">
     <div class="admin-menu">
       <a href="#" class="admin-menu-item activo" data-section="productos">
-        📦 Gestión de Productos
+        <span class="admin-menu-icon admin-menu-icon-arepa" aria-hidden="true"></span> Gestión de Productos
       </a>
       <a href="#" class="admin-menu-item" data-section="pedidos">
-        📋 Gestión de Pedidos
+        <span class="admin-menu-icon">▤</span> Gestión de Pedidos
       </a>
       <a href="#" class="admin-menu-item" data-section="usuarios">
-        👥 Gestión de Usuarios
+        <span class="admin-menu-icon">◉</span> Gestión de Usuarios
       </a>
     </div>
   </aside>
@@ -152,6 +152,36 @@
 <script>
 let productoIdEdit = null;
 
+function limpiarTextoAdmin(texto) {
+  if (!texto) return texto;
+  return texto
+    .replace(/📦|📋|👥|👤|👁️/g, '')
+    .replace(/✏️/g, '')
+    .replace(/➕/g, '')
+    .replace(/💾/g, '')
+    .replace(/📊|💰|⏳|⚙️|🟢|🔴|⛔/g, '')
+    .replace(/✓|✕/g, '')
+    .replace(/[▣▤◉○◌◷▦●$]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function limpiarEmojisAdmin(root = document) {
+  if (!root) return;
+
+  root.querySelectorAll('.admin-menu-item, .btn-ver, .btn-editar, .btn-guardar, .btn-principal, .badge-items, .estado, .estado-usuario, .rol, .stat-icon, .modal-header h2, .modal-header h3, .admin-table-card h2, .admin-table-card h3, .admin-stats h3').forEach((elemento) => {
+    if (!elemento) return;
+    elemento.textContent = limpiarTextoAdmin(elemento.textContent);
+    if (elemento.classList.contains('stat-icon') && !elemento.textContent.trim()) {
+      elemento.style.display = 'none';
+    }
+  });
+
+  root.querySelectorAll('option').forEach((option) => {
+    option.textContent = limpiarTextoAdmin(option.textContent);
+  });
+}
+
 function obtenerUsuarioDesdeBoton(btn) {
   return {
     id: btn.dataset.usuarioId,
@@ -252,6 +282,7 @@ function cargarContenido(section) {
     .then(response => response.text())
     .then(html => {
       contentArea.innerHTML = html;
+      limpiarEmojisAdmin(contentArea);
       
       // Configurar los event listeners después de cargar
       configurarEventosContent(section);
@@ -369,6 +400,7 @@ document.addEventListener('keydown', function(e) {
 
 document.addEventListener('DOMContentLoaded', function() {
   const menuItems = document.querySelectorAll('.admin-menu-item');
+  limpiarEmojisAdmin(document);
 
   menuItems.forEach(item => {
     item.addEventListener('click', function(e) {
