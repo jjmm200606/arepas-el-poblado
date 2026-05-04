@@ -13,6 +13,9 @@ import random
 import smtplib
 from decimal import Decimal, ROUND_HALF_UP
 from urllib.parse import urlencode
+from urllib.request import Request as UrlRequest, urlopen
+from urllib.error import URLError, HTTPError
+from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Form, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -55,11 +58,17 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+TZ_COLOMBIA = ZoneInfo("America/Bogota")
+
 
 
 
 def obtener_usuario(request: Request):
     return request.session.get("usuario")
+
+
+def ahora_colombia():
+    return datetime.now(TZ_COLOMBIA).replace(tzinfo=None)
 
 
 def requiere_admin(request: Request):
@@ -466,6 +475,69 @@ def mapear_estado_wompi(estado):
     return estados.get(estado, "pendiente")
 
 
+def obtener_base_api_wompi():
+    llave_publica = os.getenv("WOMPI_PUBLIC_KEY", "")
+    if llave_publica.startswith("pub_test_"):
+        return "https://sandbox.wompi.co/v1"
+    return "https://production.wompi.co/v1"
+
+
+def consultar_transaccion_wompi(transaction_id):
+    llave_publica = os.getenv("WOMPI_PUBLIC_KEY")
+    if not llave_publica or not transaction_id:
+        return None
+
+    url = f"{obtener_base_api_wompi()}/transactions/{transaction_id}"
+    solicitud = UrlRequest(
+        url,
+        headers={
+            "Authorization": f"Bearer {llave_publica}",
+            "Accept": "application/json",
+        },
+    )
+
+    try:
+        with urlopen(solicitud, timeout=15) as respuesta:
+            payload = json.loads(respuesta.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError):
+        return None
+
+    return payload.get("data")
+
+
+def aplicar_estado_transaccion_a_pedido(db, pedido, transaccion):
+    if not pedido or not transaccion:
+        return False
+
+    estado_wompi = transaccion.get("status")
+    transaction_id = transaccion.get("id")
+    referencia = transaccion.get("reference")
+
+    estado_db = obtener_estado_pedido_por_nombre(db, mapear_estado_wompi(estado_wompi))
+    if estado_db:
+        pedido.estado_pedido_id = estado_db.id
+
+    pedido.updated_at = ahora_colombia()
+
+    detalle_wompi = (
+        f"Wompi transaction_id: {transaction_id} | referencia: {referencia} | estado: {estado_wompi}"
+    )
+    if pedido.notas:
+        if "Wompi transaction_id:" in pedido.notas:
+            inicio = pedido.notas.find("Wompi transaction_id:")
+            pedido.notas = f"{pedido.notas[:inicio].rstrip(' |')}".strip()
+            if pedido.notas:
+                pedido.notas = f"{pedido.notas} | {detalle_wompi}"
+            else:
+                pedido.notas = detalle_wompi
+        else:
+            pedido.notas = f"{pedido.notas} | {detalle_wompi}"
+    else:
+        pedido.notas = detalle_wompi
+
+    return True
+
+
 @app.get("/", response_class=HTMLResponse)
 def inicio(request: Request):
     usuario = obtener_usuario(request)
@@ -549,10 +621,35 @@ def mis_pedidos(request: Request):
 def resultado_pago_wompi(request: Request):
     usuario = obtener_usuario(request)
     transaction_id = request.query_params.get("id")
+    estado_consultado = None
+    referencia = None
+
+    if transaction_id:
+        transaccion = consultar_transaccion_wompi(transaction_id)
+        if transaccion:
+            estado_consultado = mapear_estado_wompi(transaccion.get("status"))
+            referencia = transaccion.get("reference")
+            db = SessionLocal()
+            try:
+                pedido = (
+                    db.query(Pedido)
+                    .filter(Pedido.numero_pedido == referencia)
+                    .first()
+                )
+                if pedido:
+                    aplicar_estado_transaccion_a_pedido(db, pedido, transaccion)
+                    db.commit()
+            except Exception:
+                db.rollback()
+            finally:
+                db.close()
+
     return templates.TemplateResponse("pago_wompi_resultado.html", {
         "request": request,
         "usuario": usuario,
-        "transaction_id": transaction_id
+        "transaction_id": transaction_id,
+        "estado_consultado": estado_consultado,
+        "referencia_pedido": referencia,
     })
 
 
@@ -1031,7 +1128,7 @@ def actualizar_estado_pedido(
             db.close()
             return JSONResponse({"exito": False, "mensaje": "Estado no valido"}, status_code=400)
         pedido.estado_pedido_id = estado_db.id
-        pedido.updated_at = datetime.now()
+        pedido.updated_at = ahora_colombia()
         db.commit()
         db.close()
         return JSONResponse({"exito": True, "mensaje": "Estado actualizado"})
@@ -1069,7 +1166,7 @@ async def crear_pedido(request: Request):
                 }, status_code=404)
 
             total = float(data.get("total", 0) or 0)
-            timestamp = datetime.now()
+            timestamp = ahora_colombia()
 
             metodo_pago = data.get("metodoPago", "")
             estado_inicial = "pendiente"
@@ -1182,14 +1279,7 @@ async def webhook_wompi(request: Request):
         estado_db = obtener_estado_pedido_por_nombre(db, mapear_estado_wompi(estado_wompi))
         if estado_db:
             pedido.estado_pedido_id = estado_db.id
-        pedido.updated_at = datetime.now()
-
-        detalle_wompi = f"Wompi transaction_id: {transaction_id} | estado: {estado_wompi}"
-        if pedido.notas:
-            if "Wompi transaction_id:" not in pedido.notas:
-                pedido.notas = f"{pedido.notas} | {detalle_wompi}"
-        else:
-            pedido.notas = detalle_wompi
+        aplicar_estado_transaccion_a_pedido(db, pedido, transaccion)
 
         db.commit()
         return JSONResponse({"exito": True, "mensaje": "Pedido actualizado"})

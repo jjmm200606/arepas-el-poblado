@@ -12,12 +12,20 @@
     <section class="formulario-pedido">
       <h2>Gracias por tu pedido</h2>
       <p>
-        Recibimos la respuesta de Wompi. La confirmación final se actualizará
-        automáticamente cuando Wompi envíe la notificación de pago.
+        Recibimos la respuesta de Wompi. Intentamos sincronizar el estado del
+        pedido automáticamente con la información más reciente de la transacción.
       </p>
 
       {% if transaction_id %}
         <p><strong>ID de transacción:</strong> {{ transaction_id }}</p>
+      {% endif %}
+
+      {% if referencia_pedido %}
+        <p><strong>Referencia del pedido:</strong> {{ referencia_pedido }}</p>
+      {% endif %}
+
+      {% if estado_consultado %}
+        <p><strong>Estado consultado:</strong> {{ estado_consultado|capitalize }}</p>
       {% endif %}
 
       <a href="/catalogo" class="boton">Volver al catálogo</a>
@@ -26,8 +34,8 @@
     <section class="resumen-pedido">
       <h2>Estado del pedido</h2>
       <p>
-        Si el pago fue aprobado, el pedido pasará a estado Pagado en el panel
-        de administración.
+        Si el pago fue aprobado, el pedido debe verse como Pagado tanto en el
+        panel de administración como en Mis pedidos.
       </p>
     </section>
   </div>
