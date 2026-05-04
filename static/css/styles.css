@@ -2539,6 +2539,7 @@ main {
     rgba(18, 161, 80, 0.08);
   color: #ffffff;
   padding: 38px 20px 24px;
+  overflow: hidden;
 }
 
 .footer-contenido {
@@ -2550,6 +2551,16 @@ main {
   align-items: start;
 }
 
+.footer-col {
+  min-width: 0;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
 .footer-brand p {
   max-width: 320px;
 }
@@ -2558,15 +2569,21 @@ main {
   display: inline-flex;
   align-items: center;
   text-decoration: none;
+  max-width: 190px;
+  width: 100%;
+  overflow: hidden;
 }
 
 .footer-logo-img {
-  width: min(210px, 100%);
-  height: auto;
+  width: 100% !important;
+  max-width: 190px !important;
+  height: auto !important;
+  max-height: 190px;
   display: block;
   background: transparent;
   border: 0;
   box-shadow: none;
+  object-fit: contain;
 }
 
 .footer-col h3 {
