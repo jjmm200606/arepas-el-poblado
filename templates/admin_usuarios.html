@@ -43,6 +43,8 @@
                 <td>
                   {% if usuario.estado == "activo" %}
                     <span class="estado-usuario estado-activo">🟢 Activo</span>
+                  {% elif usuario.estado == "bloqueado" %}
+                    <span class="estado-usuario estado-bloqueado">⛔ Bloqueado</span>
                   {% else %}
                     <span class="estado-usuario estado-inactivo">🔴 Inactivo</span>
                   {% endif %}
@@ -169,6 +171,7 @@
           <select id="editar-estado">
             <option value="activo">🟢 Activo</option>
             <option value="inactivo">🔴 Inactivo</option>
+            <option value="bloqueado">⛔ Bloqueado</option>
           </select>
         </div>
       </div>
@@ -208,7 +211,7 @@ function abrirModalVer(usuario, id, nombre, email, rol, estado) {
   document.getElementById('ver-nombre').textContent = usuario.nombre;
   document.getElementById('ver-correo').textContent = usuario.email;
   document.getElementById('ver-rol').textContent = usuario.rol === 'admin' ? 'Administrador' : 'Cliente';
-  document.getElementById('ver-estado').textContent = usuario.estado === 'activo' ? 'Activo' : 'Inactivo';
+  document.getElementById('ver-estado').textContent = usuario.estado === 'activo' ? 'Activo' : (usuario.estado === 'bloqueado' ? 'Bloqueado' : 'Inactivo');
   document.getElementById('modalVerUsuario').classList.add('activo');
 }
 function cerrarModalVer() {
@@ -280,10 +283,16 @@ window.addEventListener('DOMContentLoaded', function() {
           cerrarModalEditar();
           window.location.reload();
         } else {
-          alert('Error al guardar cambios');
+          window.showAppAlert('Error al guardar cambios', {
+            title: 'No se pudo actualizar',
+            variant: 'warning',
+          });
         }
       })
-      .catch(() => alert('Error de red al guardar cambios'));
+      .catch(() => window.showAppAlert('Error de red al guardar cambios', {
+        title: 'Sin conexión',
+        variant: 'warning',
+      }));
     });
   }
 });

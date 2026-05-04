@@ -3,80 +3,81 @@
 {% block title %}Contáctanos | Arepas El Poblado{% endblock %}
 
 {% block content %}
-<section class="hero-portada-logo">
-  <div class="hero-overlay"></div>
+<section class="contacto-hero">
+  <div class="contacto-hero-imagen">
+    <img src="/static/img/arepascarro.jpeg" alt="Arepas El Poblado">
+  </div>
 
-  <div class="hero-contenido">
-    <p class="hero-ruta">Inicio &nbsp;›&nbsp; Contáctanos</p>
-    <h1 class="hero-titulo">Contáctanos</h1>
-    <div class="hero-decoracion"></div>
+  <div class="contacto-hero-formulario">
+    <h1>¡Déjanos tus datos y te contactamos!</h1>
+    <p>
+      ¿Quieres distribuir nuestros productos o tienes alguna duda?
+      Escríbenos y te responderemos pronto.
+    </p>
+
+    <form id="formContacto" class="form-contacto">
+      <div class="grupo-campo">
+        <label for="nombre">Nombre*</label>
+        <input type="text" id="nombre" name="nombre" placeholder="Ingresa tu nombre y apellido" required>
+      </div>
+
+      <div class="grupo-campo">
+        <label for="telefono">Teléfono*</label>
+        <input type="text" id="telefono" name="telefono" placeholder="Ingresa tu teléfono" required>
+      </div>
+
+      <div class="grupo-campo">
+        <label for="correo">Correo electrónico*</label>
+        <input type="email" id="correo" name="correo" placeholder="Ingresa tu correo electrónico" required>
+      </div>
+
+      <div class="grupo-campo">
+        <label for="mensaje">Mensaje*</label>
+        <textarea id="mensaje" name="mensaje" rows="5" placeholder="Déjanos un mensaje" required></textarea>
+      </div>
+
+      <label class="contacto-privacidad">
+        <input type="checkbox" required checked>
+        <span>Acepto política de privacidad</span>
+      </label>
+
+      <button type="submit" class="boton boton-full">Enviar</button>
+    </form>
   </div>
 </section>
 
-<section class="contacto-wrapper">
-  <div class="contacto-grid">
-    <section class="contacto-info">
-      <h2>Información de contacto</h2>
+<section class="contacto-datos">
+  <article class="contacto-dato-card">
+    <span class="contacto-icono">☎</span>
+    <div>
+      <h2>Teléfono de contacto</h2>
+      <p>310 000 0000</p>
+    </div>
+  </article>
 
-      <div class="contacto-card">
-        <h3>📍 Dirección</h3>
-        <p>Villavicencio, Meta, Colombia</p>
-      </div>
+  <article class="contacto-dato-card">
+    <span class="contacto-icono">✉</span>
+    <div>
+      <h2>Correo electrónico</h2>
+      <p>contacto@arepaselpoblado.com</p>
+    </div>
+  </article>
 
-      <div class="contacto-card">
-        <h3>📞 Teléfono</h3>
-        <p>310 000 0000</p>
-      </div>
+  <article class="contacto-dato-card">
+    <span class="contacto-icono">⌖</span>
+    <div>
+      <h2>Ubicación</h2>
+      <p>Villavicencio, Meta, Colombia</p>
+    </div>
+  </article>
 
-      <div class="contacto-card">
-        <h3>✉️ Correo electrónico</h3>
-        <p>contacto@arepaselpoblado.com</p>
-      </div>
-
-      <div class="contacto-card">
-        <h3>🕒 Horario de atención</h3>
-        <p>Lunes a sábado: 7:00 a. m. - 6:00 p. m.</p>
-      </div>
-
-      <div class="contacto-card">
-        <h3>💬 WhatsApp</h3>
-        <p>+57 310 000 0000</p>
-      </div>
-    </section>
-
-    <section class="contacto-formulario">
-      <h2>Envíanos un mensaje</h2>
-
-      <form id="formContacto" class="form-contacto">
-        <div class="grupo-campo">
-          <label for="nombre">Nombre completo</label>
-          <input type="text" id="nombre" name="nombre" required>
-        </div>
-
-        <div class="grupo-campo">
-          <label for="correo">Correo electrónico</label>
-          <input type="email" id="correo" name="correo" required>
-        </div>
-
-        <div class="grupo-campo">
-          <label for="telefono">Teléfono</label>
-          <input type="text" id="telefono" name="telefono">
-        </div>
-
-        <div class="grupo-campo">
-          <label for="asunto">Asunto</label>
-          <input type="text" id="asunto" name="asunto" required>
-        </div>
-
-        <div class="grupo-campo grupo-campo-full">
-          <label for="mensaje">Mensaje</label>
-          <textarea id="mensaje" name="mensaje" rows="6" required></textarea>
-        </div>
-
-        <button type="submit" class="boton boton-full">Enviar mensaje</button>
-      </form>
-    </section>
-  </div>
+  <article class="contacto-dato-card">
+    <span class="contacto-icono">◷</span>
+    <div>
+      <h2>Horarios de atención</h2>
+      <p>Lunes a sábado: 7:00 a. m. - 6:00 p. m.</p>
+    </div>
+  </article>
 </section>
 
 <section class="mapa-wrapper">
@@ -105,8 +106,12 @@
 <script>
   document.getElementById("formContacto").addEventListener("submit", function(event) {
     event.preventDefault();
-    alert("Mensaje enviado correctamente.");
-    document.getElementById("formContacto").reset();
+    window.showAppAlert("Mensaje enviado correctamente.", {
+      title: "Gracias por escribirnos",
+      variant: "success",
+    }).then(() => {
+      document.getElementById("formContacto").reset();
+    });
   });
 </script>
 {% endblock %}

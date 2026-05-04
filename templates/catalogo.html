@@ -3,74 +3,186 @@
 {% block title %}Catálogo | Arepas El Poblado{% endblock %}
 
 {% block content %}
+<section class="catalogo-encabezado">
+  <h1>Catálogo de arepas</h1>
+  <p>Elige una presentación para ver el detalle y agregarla al carrito.</p>
+</section>
+
 <section class="catalogo-grid">
   {% for producto in productos %}
-  <div class="tarjeta-producto">
-    <div class="contenedor-imagen-producto">
-      <img src="{{ producto.imagen_url or producto.imagen or '/static/img/productos/arepa-pequena.png' }}"
-           alt="{{ producto.nombre }}" class="imagen-producto-real">
-    </div>
-    <h2>{{ producto.nombre }}</h2>
-    <p>{{ producto.descripcion }}</p>
-    <p class="precio">${{ '{:,.0f}'.format(producto.precio | float).replace(',', '.') }}</p>
+    {% set imagen_producto = producto.imagen_url or producto.imagen or '/static/img/productos/arepa-pequena.png' %}
+    {% set descripcion_producto = producto.descripcion or 'Presentación ideal para acompañar tus comidas favoritas.' %}
+    <article
+      class="tarjeta-producto"
+      tabindex="0"
+      role="button"
+      data-producto-id="{{ producto.id }}"
+      data-producto-nombre="{{ producto.nombre }}"
+      data-producto-descripcion="{{ descripcion_producto }}"
+      data-producto-precio="{{ producto.precio | float }}"
+      data-producto-precio-formateado="${{ '{:,.0f}'.format(producto.precio | float).replace(',', '.') }}"
+      data-producto-stock="{{ producto.stock or 0 }}"
+      data-producto-imagen="{{ imagen_producto }}"
+    >
+      <div class="contenedor-imagen-producto">
+        <img src="{{ imagen_producto }}" alt="{{ producto.nombre }}" class="imagen-producto-real">
+      </div>
 
-    <div class="control-cantidad">
-      <label for="cantidad-{{ producto.id }}">Cantidad</label>
-      <input type="number" id="cantidad-{{ producto.id }}" min="1" value="1" class="input-cantidad">
-    </div>
-
-    <button class="boton"
-      onclick="agregarAlCarrito({{ producto.id }}, '{{ producto.nombre }}', 'cantidad-{{ producto.id }}', this)"
-      data-imagen="{{ producto.imagen_url or producto.imagen or '' }}">
-      Agregar al carrito
-    </button>
-  </div>
+      <div class="contenido-tarjeta-producto">
+        <h2>{{ producto.nombre }}</h2>
+        <p class="descripcion-corta-producto">{{ descripcion_producto }}</p>
+        <p class="precio">${{ '{:,.0f}'.format(producto.precio | float).replace(',', '.') }}</p>
+      </div>
+    </article>
   {% else %}
-  <p>No hay productos disponibles.</p>
+    <p class="catalogo-vacio">No hay productos disponibles.</p>
   {% endfor %}
 </section>
 
+<div class="producto-modal" id="productoModal" aria-hidden="true">
+  <div class="producto-modal-fondo" data-cerrar-producto></div>
+
+  <section class="producto-modal-contenido" role="dialog" aria-modal="true" aria-labelledby="productoModalTitulo">
+    <button type="button" class="producto-modal-cerrar" data-cerrar-producto aria-label="Cerrar producto">x</button>
+
+    <div class="producto-modal-imagen">
+      <img id="productoModalImg" src="" alt="">
+    </div>
+
+    <div class="producto-modal-info">
+      <p class="producto-ruta">Inicio / Arepas / <span id="productoModalRuta"></span></p>
+      <h2 id="productoModalTitulo"></h2>
+      <p class="producto-categoria">Arepas El Poblado</p>
+      <p class="producto-modal-descripcion" id="productoModalDescripcion"></p>
+      <p class="producto-modal-precio" id="productoModalPrecio"></p>
+
+      <div class="producto-modal-cantidad">
+        <label for="productoModalCantidad">Cantidad</label>
+        <input type="number" id="productoModalCantidad" min="1" value="1">
+      </div>
+
+      <div class="producto-beneficios">
+        <div><span>▣</span> Envíos disponibles</div>
+        <div><span>↔</span> Compra segura</div>
+        <div><span>$</span> Múltiples medios de pago</div>
+        <div><span>▤</span> Pagos en línea</div>
+      </div>
+
+      <button type="button" class="boton producto-modal-boton" id="productoModalAgregar">
+        Agregar al carrito
+      </button>
+    </div>
+  </section>
+</div>
+
 <script>
-  function agregarAlCarrito(id, nombre, idCantidad, buttonElement) {
-    let carrito = window.cartStore.read();
-    let cantidad = parseInt(document.getElementById(idCantidad).value);
+  const productoModal = document.getElementById("productoModal");
+  const productoModalImg = document.getElementById("productoModalImg");
+  const productoModalRuta = document.getElementById("productoModalRuta");
+  const productoModalTitulo = document.getElementById("productoModalTitulo");
+  const productoModalDescripcion = document.getElementById("productoModalDescripcion");
+  const productoModalPrecio = document.getElementById("productoModalPrecio");
+  const productoModalCantidad = document.getElementById("productoModalCantidad");
+  const productoModalAgregar = document.getElementById("productoModalAgregar");
+  const productoCards = document.querySelectorAll(".tarjeta-producto");
+  let productoSeleccionado = null;
 
-    const tarjetaProducto = buttonElement.closest('.tarjeta-producto');
-    const precioTexto = tarjetaProducto.querySelector('.precio').textContent;
-    const precio = parseInt(precioTexto.replace(/[^\d]/g, ''), 10);
+  function abrirProducto(card) {
+    productoSeleccionado = {
+      id: Number(card.dataset.productoId),
+      nombre: card.dataset.productoNombre,
+      descripcion: card.dataset.productoDescripcion,
+      precio: Number(card.dataset.productoPrecio),
+      precioFormateado: card.dataset.productoPrecioFormateado,
+      imagen: card.dataset.productoImagen || "/static/img/productos/arepa-pequena.png",
+    };
 
+    productoModalImg.src = productoSeleccionado.imagen;
+    productoModalImg.alt = productoSeleccionado.nombre;
+    productoModalRuta.textContent = productoSeleccionado.nombre;
+    productoModalTitulo.textContent = productoSeleccionado.nombre;
+    productoModalDescripcion.textContent = productoSeleccionado.descripcion;
+    productoModalPrecio.textContent = productoSeleccionado.precioFormateado;
+    productoModalCantidad.value = 1;
+
+    productoModal.classList.add("visible");
+    productoModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-abierto");
+  }
+
+  function cerrarProducto() {
+    productoModal.classList.remove("visible");
+    productoModal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-abierto");
+  }
+
+  function agregarProductoSeleccionado() {
+    if (!productoSeleccionado) return;
+
+    const cantidad = parseInt(productoModalCantidad.value, 10);
     if (isNaN(cantidad) || cantidad < 1) {
-      alert("Por favor ingresa una cantidad válida.");
+      window.showAppAlert("Por favor ingresa una cantidad válida.", {
+        title: "Cantidad inválida",
+        variant: "warning",
+      });
       return;
     }
 
-    if (isNaN(precio) || precio <= 0) {
-      alert("No se pudo leer el precio del producto.");
+    if (isNaN(productoSeleccionado.precio) || productoSeleccionado.precio <= 0) {
+      window.showAppAlert("No se pudo leer el precio del producto.", {
+        title: "Producto no disponible",
+        variant: "warning",
+      });
       return;
     }
 
-    const imagen = buttonElement.dataset.imagen || '/static/img/productos/arepa-pequena.png';
-
-    const productoExistente = carrito.find(item => item.id === id);
+    const carrito = window.cartStore.read();
+    const productoExistente = carrito.find((item) => item.id === productoSeleccionado.id);
 
     if (productoExistente) {
       productoExistente.cantidad += cantidad;
     } else {
       carrito.push({
-        id: id,
-        nombre: nombre,
-        precio: precio,
+        id: productoSeleccionado.id,
+        nombre: productoSeleccionado.nombre,
+        precio: productoSeleccionado.precio,
         cantidad: cantidad,
-        imagen: imagen
+        imagen: productoSeleccionado.imagen,
       });
     }
 
     window.cartStore.write(carrito);
-    document.getElementById(idCantidad).value = 1;
+    cerrarProducto();
+
     const mensajePersistencia = window.cartStore.isPersistent()
-      ? 'Tu carrito quedó guardado en tu cuenta.'
-      : 'Tu carrito es temporal y se reiniciará al cerrar la sesión del navegador.';
-    alert(nombre + " agregado al carrito. " + mensajePersistencia);
+      ? "Tu carrito quedó guardado en tu cuenta."
+      : "Tu carrito es temporal y se reiniciará al cerrar la sesión del navegador.";
+    window.showAppAlert(productoSeleccionado.nombre + " agregado al carrito. " + mensajePersistencia, {
+      title: "Producto agregado",
+      variant: "success",
+    });
   }
+
+  productoCards.forEach((card) => {
+    card.addEventListener("click", () => abrirProducto(card));
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        abrirProducto(card);
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-cerrar-producto]").forEach((elemento) => {
+    elemento.addEventListener("click", cerrarProducto);
+  });
+
+  productoModalAgregar.addEventListener("click", agregarProductoSeleccionado);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && productoModal.classList.contains("visible")) {
+      cerrarProducto();
+    }
+  });
 </script>
 {% endblock %}

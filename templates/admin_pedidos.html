@@ -45,22 +45,27 @@
                 </td>
                 <td><span class="precio">$ {{ pedido.total|string }}</span></td>
                 <td>
-                  {% if pedido.estado == "Pendiente" %}
+                  {% if pedido.estado == "pendiente" %}
                     <span class="estado estado-pendiente">⏳ Pendiente</span>
-                  {% elif pedido.estado == "En proceso" %}
+                  {% elif pedido.estado == "en proceso" %}
                     <span class="estado estado-proceso">⚙️ En proceso</span>
-                  {% elif pedido.estado == "Completado" %}
+                  {% elif pedido.estado == "pagado" %}
+                    <span class="estado estado-completado">✓ Pagado</span>
+                  {% elif pedido.estado == "completado" %}
                     <span class="estado estado-completado">✓ Completado</span>
-                  {% elif pedido.estado == "Cancelado" %}
+                  {% elif pedido.estado == "cancelado" %}
                     <span class="estado estado-cancelado">✕ Cancelado</span>
+                  {% else %}
+                    <span class="estado estado-pendiente">{{ pedido.estado }}</span>
                   {% endif %}
                 </td>
                 <td>
                   <select class="select-estado" data-pedido-id="{{ pedido.id }}" onchange="cambiarEstado(event)">
-                    <option value="Pendiente" {% if pedido.estado == "Pendiente" %}selected{% endif %}>Pendiente</option>
-                    <option value="En proceso" {% if pedido.estado == "En proceso" %}selected{% endif %}>En proceso</option>
-                    <option value="Completado" {% if pedido.estado == "Completado" %}selected{% endif %}>Completado</option>
-                    <option value="Cancelado" {% if pedido.estado == "Cancelado" %}selected{% endif %}>Cancelado</option>
+                    <option value="pendiente" {% if pedido.estado == "pendiente" %}selected{% endif %}>Pendiente</option>
+                    <option value="en proceso" {% if pedido.estado == "en proceso" %}selected{% endif %}>En proceso</option>
+                    <option value="pagado" {% if pedido.estado == "pagado" %}selected{% endif %}>Pagado</option>
+                    <option value="completado" {% if pedido.estado == "completado" %}selected{% endif %}>Completado</option>
+                    <option value="cancelado" {% if pedido.estado == "cancelado" %}selected{% endif %}>Cancelado</option>
                   </select>
                 </td>
                 <td>
@@ -111,31 +116,43 @@
             const estadoActualTd = row.querySelector('td:nth-child(6)');
             if (estadoActualTd) {
               let html = '';
-              if (estado === 'Pendiente') html = '<span class="estado estado-pendiente">⏳ Pendiente</span>';
-              else if (estado === 'En proceso') html = '<span class="estado estado-proceso">⚙️ En proceso</span>';
-              else if (estado === 'Completado') html = '<span class="estado estado-completado">✓ Completado</span>';
-              else if (estado === 'Cancelado') html = '<span class="estado estado-cancelado">✕ Cancelado</span>';
+              if (estado === 'pendiente') html = '<span class="estado estado-pendiente">⏳ Pendiente</span>';
+              else if (estado === 'en proceso') html = '<span class="estado estado-proceso">⚙️ En proceso</span>';
+              else if (estado === 'pagado') html = '<span class="estado estado-completado">✓ Pagado</span>';
+              else if (estado === 'completado') html = '<span class="estado estado-completado">✓ Completado</span>';
+              else if (estado === 'cancelado') html = '<span class="estado estado-cancelado">✕ Cancelado</span>';
+              else html = `<span class="estado estado-pendiente">${estado}</span>`;
               estadoActualTd.innerHTML = html;
             }
           } else {
             selectElement.style.background = '#ffd6d6';
             setTimeout(() => selectElement.style.background = '', 800);
-            alert('Error: ' + (data.mensaje || 'No se pudo actualizar'));
+            window.showAppAlert('Error: ' + (data.mensaje || 'No se pudo actualizar'), {
+              title: 'No se pudo actualizar',
+              variant: 'warning',
+            });
           }
         })
         .catch(error => {
           console.error('Error:', error);
           selectElement.style.background = '#ffd6d6';
           setTimeout(() => selectElement.style.background = '', 800);
-          alert('Error de conexión');
+          window.showAppAlert('Error de conexión', {
+            title: 'Sin conexión',
+            variant: 'warning',
+          });
         });
       }
 
       // Función para eliminar pedido
-      function eliminarPedido(pedidoId, buttonElement) {
-        if (!confirm('¿Estás seguro de que deseas eliminar este pedido?')) {
-          return;
-        }
+      async function eliminarPedido(pedidoId, buttonElement) {
+        const confirmado = await window.showAppConfirm('¿Estás seguro de que deseas eliminar este pedido?', {
+          title: 'Eliminar pedido',
+          confirmText: 'Eliminar',
+          cancelText: 'Cancelar',
+          variant: 'warning',
+        });
+        if (!confirmado) return;
         
         fetch(`/admin/pedidos/eliminar/${pedidoId}`, {
           method: 'POST',
@@ -151,14 +168,23 @@
             row.style.transition = 'opacity 0.3s';
             row.style.opacity = '0';
             setTimeout(() => row.remove(), 300);
-            alert('Pedido eliminado exitosamente');
+            window.showAppAlert('Pedido eliminado exitosamente', {
+              title: 'Pedido eliminado',
+              variant: 'success',
+            });
           } else {
-            alert('Error al eliminar el pedido: ' + (data.mensaje || 'Error desconocido'));
+            window.showAppAlert('Error al eliminar el pedido: ' + (data.mensaje || 'Error desconocido'), {
+              title: 'No se pudo eliminar',
+              variant: 'warning',
+            });
           }
         })
         .catch(error => {
           console.error('Error:', error);
-          alert('Error al conectar con el servidor');
+          window.showAppAlert('Error al conectar con el servidor', {
+            title: 'Sin conexión',
+            variant: 'warning',
+          });
         });
       }
     </script>
@@ -179,7 +205,7 @@
           <div class="stat-icon">⏳</div>
           <div class="stat-info">
             <h3>Pendientes</h3>
-            <p class="stat-number">{% set pendientes = pedidos|selectattr('estado', 'equalto', 'Pendiente')|list %}{{ pendientes|length }}</p>
+            <p class="stat-number">{% set pendientes = pedidos|selectattr('estado', 'equalto', 'pendiente')|list %}{{ pendientes|length }}</p>
           </div>
         </div>
 
@@ -187,7 +213,7 @@
           <div class="stat-icon">✓</div>
           <div class="stat-info">
             <h3>Completados</h3>
-            <p class="stat-number">{% set completados = pedidos|selectattr('estado', 'equalto', 'Completado')|list %}{{ completados|length }}</p>
+            <p class="stat-number">{% set completados = pedidos|selectattr('estado', 'equalto', 'completado')|list %}{{ completados|length }}</p>
           </div>
         </div>
 

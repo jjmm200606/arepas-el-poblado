@@ -217,7 +217,7 @@ function abrirModalVer(usuario, id, nombre, correo, rol, estado) {
   const rolTexto = usuario.rol === 'admin' ? '⚙️ Administrador' : '👤 Cliente';
   document.getElementById('ver-rol').textContent = rolTexto;
 
-  const estadoTexto = usuario.estado === 'activo' ? '🟢 Activo' : '🔴 Inactivo';
+  const estadoTexto = usuario.estado === 'activo' ? '🟢 Activo' : (usuario.estado === 'bloqueado' ? '⛔ Bloqueado' : '🔴 Inactivo');
   document.getElementById('ver-estado').textContent = estadoTexto;
 
   document.getElementById('modalVerUsuario').classList.add('activo');
@@ -344,11 +344,17 @@ function manejarSubmitEditarUsuario(e) {
         cerrarModalEditar();
         cargarContenido('usuarios');
       } else {
-        alert(data.mensaje || 'Error al actualizar el usuario');
+        window.showAppAlert(data.mensaje || 'Error al actualizar el usuario', {
+          title: 'No se pudo actualizar',
+          variant: 'warning',
+        });
       }
     })
     .catch(() => {
-      alert('Error de red al actualizar el usuario');
+      window.showAppAlert('Error de red al actualizar el usuario', {
+        title: 'Sin conexión',
+        variant: 'warning',
+      });
     });
 }
 

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Pago Wompi | Arepas El Poblado{% endblock %}
+
+{% block content %}
+<section class="banner-titulo">
+  <h1>Resultado del pago</h1>
+</section>
+
+<section class="pedido-wrapper">
+  <div class="pedido-grid">
+    <section class="formulario-pedido">
+      <h2>Gracias por tu pedido</h2>
+      <p>
+        Recibimos la respuesta de Wompi. La confirmación final se actualizará
+        automáticamente cuando Wompi envíe la notificación de pago.
+      </p>
+
+      {% if transaction_id %}
+        <p><strong>ID de transacción:</strong> {{ transaction_id }}</p>
+      {% endif %}
+
+      <a href="/catalogo" class="boton">Volver al catálogo</a>
+    </section>
+
+    <section class="resumen-pedido">
+      <h2>Estado del pedido</h2>
+      <p>
+        Si el pago fue aprobado, el pedido pasará a estado Pagado en el panel
+        de administración.
+      </p>
+    </section>
+  </div>
+</section>
+{% endblock %}

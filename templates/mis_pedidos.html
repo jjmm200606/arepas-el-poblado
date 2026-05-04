@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+
+{% block title %}Mis pedidos | Arepas El Poblado{% endblock %}
+
+{% block content %}
+<section class="banner-titulo">
+  <h1>Mis pedidos</h1>
+  <p>Revisa el estado de tus compras y los detalles de cada pedido.</p>
+</section>
+
+<section class="mis-pedidos-section">
+  <div class="mis-pedidos-container">
+    {% if pedidos %}
+      <div class="mis-pedidos-grid">
+        {% for pedido in pedidos %}
+          {% set estado = pedido.estado or 'pendiente' %}
+          {% set paso_actual = 0 %}
+          {% if estado == 'en proceso' %}
+            {% set paso_actual = 1 %}
+          {% elif estado == 'pagado' %}
+            {% set paso_actual = 2 %}
+          {% elif estado == 'completado' %}
+            {% set paso_actual = 3 %}
+          {% endif %}
+          <article class="pedido-cliente-card">
+            <div class="pedido-cliente-head">
+              <div>
+                <p class="pedido-cliente-label">Pedido</p>
+                <h2>#{{ pedido.numero_pedido or pedido.id }}</h2>
+              </div>
+              <span class="pedido-cliente-estado 
+                {% if estado == 'pagado' or estado == 'completado' %}pedido-cliente-estado-ok
+                {% elif estado == 'cancelado' %}pedido-cliente-estado-bad
+                {% elif estado == 'en proceso' %}pedido-cliente-estado-run
+                {% else %}pedido-cliente-estado-wait{% endif %}">
+                {% if estado == 'pagado' %}
+                  Pagado
+                {% elif estado == 'completado' %}
+                  Completado
+                {% elif estado == 'cancelado' %}
+                  Cancelado
+                {% elif estado == 'en proceso' %}
+                  En proceso
+                {% else %}
+                  Pendiente
+                {% endif %}
+              </span>
+            </div>
+
+            {% if estado == 'cancelado' %}
+              <div class="pedido-cliente-timeline pedido-cliente-timeline-cancelado">
+                <div class="pedido-cliente-cancelado-card">
+                  <span class="pedido-cliente-cancelado-icono">✕</span>
+                  <div>
+                    <strong>Pedido cancelado</strong>
+                    <p>Este pedido ya no continuará en el flujo de preparación o entrega.</p>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <div class="pedido-cliente-timeline">
+                <div class="pedido-cliente-track"></div>
+                <div class="pedido-cliente-track-fill pedido-cliente-track-fill-{{ paso_actual }}"></div>
+
+                <div class="pedido-cliente-step {% if paso_actual >= 0 %}activo{% endif %}">
+                  <div class="pedido-cliente-step-dot">1</div>
+                  <span>Pendiente</span>
+                </div>
+
+                <div class="pedido-cliente-step {% if paso_actual >= 1 %}activo{% endif %}">
+                  <div class="pedido-cliente-step-dot">2</div>
+                  <span>En proceso</span>
+                </div>
+
+                <div class="pedido-cliente-step {% if paso_actual >= 2 %}activo{% endif %}">
+                  <div class="pedido-cliente-step-dot">3</div>
+                  <span>Pagado</span>
+                </div>
+
+                <div class="pedido-cliente-step {% if paso_actual >= 3 %}activo{% endif %}">
+                  <div class="pedido-cliente-step-dot">4</div>
+                  <span>Completado</span>
+                </div>
+              </div>
+            {% endif %}
+
+            <div class="pedido-cliente-meta">
+              <div>
+                <span>Fecha</span>
+                <strong>{{ pedido.fecha_pedido.strftime('%d/%m/%Y %I:%M %p') if pedido.fecha_pedido else 'Sin fecha' }}</strong>
+              </div>
+              <div>
+                <span>Total</span>
+                <strong>${{ '{:,.0f}'.format(pedido.total | float).replace(',', '.') }}</strong>
+              </div>
+              <div>
+                <span>Dirección</span>
+                <strong>{{ pedido.cliente_direccion or 'No registrada' }}</strong>
+              </div>
+            </div>
+
+            {% if pedido.notas %}
+              <div class="pedido-cliente-notas">
+                <span>Notas</span>
+                <p>{{ pedido.notas }}</p>
+              </div>
+            {% endif %}
+
+            <div class="pedido-cliente-items">
+              <h3>Productos</h3>
+              {% for detalle in pedido.detalles %}
+                <div class="pedido-cliente-item">
+                  <div>
+                    <strong>{{ detalle.producto.nombre if detalle.producto else 'Producto' }}</strong>
+                    <p>Cantidad: {{ detalle.cantidad }}</p>
+                  </div>
+                  <div class="pedido-cliente-item-precio">
+                    ${{ '{:,.0f}'.format(detalle.subtotal | float).replace(',', '.') }}
+                  </div>
+                </div>
+              {% else %}
+                <p class="pedido-cliente-vacio">No hay detalles disponibles para este pedido.</p>
+              {% endfor %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="mis-pedidos-vacio">
+        <h2>Aún no tienes pedidos registrados</h2>
+        <p>Cuando completes una compra, aquí podrás seguir su estado.</p>
+        <a href="/catalogo" class="boton">Ir al catálogo</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<style>
+  .mis-pedidos-section {
+    padding: 0 24px 56px;
+  }
+
+  .mis-pedidos-container {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .mis-pedidos-grid {
+    display: grid;
+    gap: 18px;
+  }
+
+  .pedido-cliente-card {
+    background: #ffffff;
+    border: 1px solid #dcefe3;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 10px 28px rgba(16, 48, 39, 0.08);
+  }
+
+  .pedido-cliente-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+
+  .pedido-cliente-label {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6a8578;
+  }
+
+  .pedido-cliente-head h2 {
+    margin: 0;
+    font-size: 28px;
+    color: var(--verde-principal);
+  }
+
+  .pedido-cliente-estado {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 130px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .pedido-cliente-estado-ok {
+    background: #e8f7ee;
+    color: #118045;
+  }
+
+  .pedido-cliente-estado-run {
+    background: #eef7ff;
+    color: #0f6db1;
+  }
+
+  .pedido-cliente-estado-bad {
+    background: #fff0ea;
+    color: #d55229;
+  }
+
+  .pedido-cliente-estado-wait {
+    background: #fff8e7;
+    color: #a06c00;
+  }
+
+  .pedido-cliente-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .pedido-cliente-timeline {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 0 4px;
+  }
+
+  .pedido-cliente-track,
+  .pedido-cliente-track-fill {
+    position: absolute;
+    left: 28px;
+    right: 28px;
+    top: 28px;
+    height: 4px;
+    border-radius: 999px;
+  }
+
+  .pedido-cliente-track {
+    background: #dcebe3;
+  }
+
+  .pedido-cliente-track-fill {
+    background: linear-gradient(90deg, #11a251, #1ec768);
+    width: 0;
+    right: auto;
+    transition: width 0.25s ease;
+  }
+
+  .pedido-cliente-track-fill-0 {
+    width: calc(25% - 28px);
+  }
+
+  .pedido-cliente-track-fill-1 {
+    width: calc(50% - 18px);
+  }
+
+  .pedido-cliente-track-fill-2 {
+    width: calc(75% - 8px);
+  }
+
+  .pedido-cliente-track-fill-3 {
+    width: calc(100% - 56px);
+  }
+
+  .pedido-cliente-step {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .pedido-cliente-step-dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: #eef5f1;
+    border: 2px solid #cfe3d7;
+    color: #7e968a;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .pedido-cliente-step span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #748b80;
+  }
+
+  .pedido-cliente-step.activo .pedido-cliente-step-dot {
+    background: #11a251;
+    border-color: #11a251;
+    color: #ffffff;
+    box-shadow: 0 10px 18px rgba(17, 162, 81, 0.22);
+  }
+
+  .pedido-cliente-step.activo span {
+    color: #17322a;
+  }
+
+  .pedido-cliente-timeline-cancelado {
+    display: block;
+    padding: 0;
+  }
+
+  .pedido-cliente-cancelado-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    background: #fff2eb;
+    border: 1px solid #ffd2bf;
+    border-radius: 8px;
+  }
+
+  .pedido-cliente-cancelado-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: #ff6b3d;
+    color: #ffffff;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .pedido-cliente-cancelado-card strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #9c3d1e;
+  }
+
+  .pedido-cliente-cancelado-card p {
+    margin: 0;
+    color: #a2573d;
+    line-height: 1.6;
+  }
+
+  .pedido-cliente-meta div,
+  .pedido-cliente-notas {
+    background: #f8fcfa;
+    border: 1px solid #e2f0e8;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+
+  .pedido-cliente-meta span,
+  .pedido-cliente-notas span {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6a8578;
+  }
+
+  .pedido-cliente-meta strong,
+  .pedido-cliente-notas p {
+    color: #1e342d;
+    line-height: 1.6;
+  }
+
+  .pedido-cliente-notas {
+    margin-bottom: 18px;
+  }
+
+  .pedido-cliente-notas p {
+    margin: 0;
+  }
+
+  .pedido-cliente-items h3 {
+    margin: 0 0 14px;
+    font-size: 20px;
+    color: #17322a;
+  }
+
+  .pedido-cliente-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 14px 0;
+    border-top: 1px solid #edf4f0;
+  }
+
+  .pedido-cliente-item:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .pedido-cliente-item strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #17322a;
+  }
+
+  .pedido-cliente-item p {
+    margin: 0;
+    color: #628075;
+  }
+
+  .pedido-cliente-item-precio {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--naranja-principal);
+    white-space: nowrap;
+  }
+
+  .mis-pedidos-vacio {
+    text-align: center;
+    padding: 48px 24px;
+    background: #ffffff;
+    border: 1px solid #dcefe3;
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(16, 48, 39, 0.08);
+  }
+
+  .mis-pedidos-vacio h2 {
+    margin: 0 0 12px;
+    color: var(--verde-principal);
+  }
+
+  .mis-pedidos-vacio p {
+    margin: 0 0 22px;
+    color: #5f7d72;
+  }
+
+  .pedido-cliente-vacio {
+    margin: 0;
+    color: #5f7d72;
+  }
+
+  @media (max-width: 780px) {
+    .mis-pedidos-section {
+      padding: 0 16px 42px;
+    }
+
+    .pedido-cliente-card {
+      padding: 18px;
+    }
+
+    .pedido-cliente-head {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .pedido-cliente-meta {
+      grid-template-columns: 1fr;
+    }
+
+    .pedido-cliente-timeline {
+      grid-template-columns: 1fr 1fr;
+      row-gap: 18px;
+    }
+
+    .pedido-cliente-track,
+    .pedido-cliente-track-fill {
+      display: none;
+    }
+
+    .pedido-cliente-item {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+{% endblock %}

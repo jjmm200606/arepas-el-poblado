@@ -78,36 +78,89 @@
   </div>
 </section>
 
-<section class="publicidad">
-  <h2>Lo mejor de nuestra empresa</h2>
-  <p>
-    En Arepas El Poblado ofrecemos variedad, calidad y atención para brindar una
-    experiencia confiable a nuestros clientes.
-  </p>
+<section class="recetas-inicio">
+  <h2>Recetas para disfrutar de nuestras arepas</h2>
+  <p>Haz clic en una receta para ver la preparación y elegir la arepa recomendada.</p>
 
-  <div class="publicidad-cards">
-    <div class="card-publicidad">
-      <h3>Calidad</h3>
-      <p>Productos elaborados con dedicación y excelente sabor.</p>
-    </div>
+  <div class="recetas-grid">
+    <article
+      class="receta-card"
+      tabindex="0"
+      role="button"
+      data-receta-titulo="Arepa rellena de huevo"
+      data-receta-etiqueta="Desayuno"
+      data-receta-img="/static/img/productos/areparellenahuevos.jpg"
+      data-receta-alt="Arepa rellena de huevo"
+      data-receta-pasos='["Calienta la arepa hasta que quede suave y dorada.", "Abre la arepa con cuidado por un costado.", "Agrega el huevo preparado a tu gusto.", "Cierra la arepa y sirve caliente."]'
+      data-receta-link="/catalogo"
+    >
+      <img src="/static/img/productos/areparellenahuevos.jpg" alt="Arepa para desayuno" class="receta-img">
+      <div class="receta-contenido">
+        <span class="receta-etiqueta">Desayuno</span>
+        <h3>Arepa Rellena de huevo</h3>
+        <p>Una idea para empezar el día con una preparación casera, práctica y bien sabrosa.</p>
+      </div>
+    </article>
 
-    <div class="card-publicidad">
-      <h3>Variedad</h3>
-      <p>Diferentes presentaciones para cada necesidad.</p>
-    </div>
+    <article
+      class="receta-card"
+      tabindex="0"
+      role="button"
+      data-receta-titulo="Arepa con chorizo"
+      data-receta-etiqueta="Pasa bocas"
+      data-receta-img="/static/img/slider/slide2.jpg"
+      data-receta-alt="Arepa con chorizo"
+      data-receta-pasos='["Dora la arepa por ambos lados.", "dora el chorizo a tu gusto.", "Pica el chorizo en trozos pequeños y ponlo encima de la arepa.", "Sirve caliente en el plato y acompaña con limon o salsa a tu gusto."]'
+      data-receta-link="/catalogo"
+    >
+      <img src="/static/img/slider/slide2.jpg" alt="Arepa con chorizo" class="receta-img">
+      <div class="receta-contenido">
+        <span class="receta-etiqueta">Pasa bocas</span>
+        <h3>Arepa con chorizo</h3>
+        <p>Una opción completa para esos días en los que quieres algo fácil sin perder el gusto.</p>
+      </div>
+    </article>
 
-    <div class="card-publicidad">
-      <h3>Servicio</h3>
-      <p>Atención práctica y pedidos pensados para el cliente.</p>
-    </div>
+    <article
+      class="receta-card"
+      tabindex="0"
+      role="button"
+      data-receta-titulo="Arepa dulce con mantequilla"
+      data-receta-etiqueta="Merienda"
+      data-receta-img="/static/img/productos/arepa-chocolo.png"
+      data-receta-alt="Arepa dulce con mantequilla"
+      data-receta-pasos='["Calienta la arepa de chocolo a fuego medio.", "Unta mantequilla mientras está caliente.", "Agrega queso si quieres un contraste dulce y salado.", "Sirve con café, chocolate o la bebida que prefieras."]'
+      data-receta-link="/catalogo"
+    >
+      <img src="/static/img/productos/arepa-chocolo.png" alt="Arepa dulce para merienda" class="receta-img">
+      <div class="receta-contenido">
+        <span class="receta-etiqueta">Merienda</span>
+        <h3>Arepa dulce con mantequilla</h3>
+        <p>Una preparación sencilla para acompañar café, chocolate o una tarde tranquila.</p>
+      </div>
+    </article>
   </div>
 
-  <div class="imagenes-publicidad">
-    <div class="imagen-placeholder">Espacio para imagen de calidad</div>
-    <div class="imagen-placeholder">Espacio para imagen de variedad</div>
-    <div class="imagen-placeholder">Espacio para imagen de servicio</div>
-  </div>
 </section>
+
+<div class="receta-modal" id="recetaModal" aria-hidden="true">
+  <div class="receta-modal-fondo" data-cerrar-receta></div>
+  <section class="receta-modal-contenido" role="dialog" aria-modal="true" aria-labelledby="recetaModalTitulo">
+    <button type="button" class="receta-modal-cerrar" data-cerrar-receta aria-label="Cerrar receta">×</button>
+
+    <div class="receta-modal-imagen">
+      <img id="recetaModalImg" src="" alt="">
+    </div>
+
+    <div class="receta-modal-info">
+      <span class="receta-etiqueta" id="recetaModalEtiqueta"></span>
+      <h2 id="recetaModalTitulo"></h2>
+      <h3>Paso a paso</h3>
+      <ol id="recetaModalPasos"></ol>
+      <a href="/catalogo" class="boton" id="recetaModalBoton">Comprar arepa</a>
+    </div>
+  </section>
+</div>
 
 <section class="proceso-arepa">
   <div class="proceso-encabezado">
@@ -198,5 +251,65 @@
     slideActual = index;
     mostrarSlide(slideActual);
   }
+
+  const recetaModal = document.getElementById("recetaModal");
+  const recetaModalImg = document.getElementById("recetaModalImg");
+  const recetaModalEtiqueta = document.getElementById("recetaModalEtiqueta");
+  const recetaModalTitulo = document.getElementById("recetaModalTitulo");
+  const recetaModalPasos = document.getElementById("recetaModalPasos");
+  const recetaModalBoton = document.getElementById("recetaModalBoton");
+  const recetaCards = document.querySelectorAll(".receta-card");
+
+  function abrirReceta(card) {
+    let pasos = [];
+
+    try {
+      pasos = JSON.parse(card.dataset.recetaPasos || "[]");
+    } catch (error) {
+      pasos = [];
+    }
+
+    recetaModalImg.src = card.dataset.recetaImg;
+    recetaModalImg.alt = card.dataset.recetaAlt || card.dataset.recetaTitulo;
+    recetaModalEtiqueta.textContent = card.dataset.recetaEtiqueta;
+    recetaModalTitulo.textContent = card.dataset.recetaTitulo;
+    recetaModalBoton.href = card.dataset.recetaLink || "/catalogo";
+    recetaModalPasos.innerHTML = "";
+    pasos.forEach((paso) => {
+      const item = document.createElement("li");
+      item.textContent = paso;
+      recetaModalPasos.appendChild(item);
+    });
+
+    recetaModal.classList.add("visible");
+    recetaModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-abierto");
+  }
+
+  function cerrarReceta() {
+    recetaModal.classList.remove("visible");
+    recetaModal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-abierto");
+  }
+
+  recetaCards.forEach((card) => {
+    card.addEventListener("click", () => abrirReceta(card));
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        abrirReceta(card);
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-cerrar-receta]").forEach((elemento) => {
+    elemento.addEventListener("click", cerrarReceta);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && recetaModal.classList.contains("visible")) {
+      cerrarReceta();
+    }
+  });
 </script>
 {% endblock %}

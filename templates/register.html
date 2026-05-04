@@ -27,18 +27,29 @@
 
       <div class="grupo-campo">
         <label for="correo">Correo electrónico</label>
-        <input type="email" id="correo" name="correo" required placeholder="tu@correo.com">
+        <input type="email" id="correo" name="email" required placeholder="tu@correo.com">
       </div>
 
       <div class="grupo-campo">
         <label for="password">Contraseña</label>
-        <input type="password" id="password" name="password" required placeholder="Mínimo 6 caracteres">
-        <small style="color: #666;">La contraseña debe tener al menos 6 caracteres</small>
+        <div class="campo-password">
+          <input type="password" id="password" name="password" required minlength="8" placeholder="Crea una contraseña segura">
+          <button type="button" class="toggle-password" data-password-target="password">Ver</button>
+        </div>
+        <ul class="requisitos-password">
+          <li>Mínimo 8 caracteres</li>
+          <li>Una letra mayúscula y una minúscula</li>
+          <li>Un número</li>
+          <li>Un carácter especial, por ejemplo @, # o !</li>
+        </ul>
       </div>
 
       <div class="grupo-campo">
         <label for="password_confirm">Confirmar contraseña</label>
-        <input type="password" id="password_confirm" name="password_confirm" required placeholder="Confirma tu contraseña">
+        <div class="campo-password">
+          <input type="password" id="password_confirm" name="password_confirm" required minlength="8" placeholder="Confirma tu contraseña">
+          <button type="button" class="toggle-password" data-password-target="password_confirm">Ver</button>
+        </div>
       </div>
 
       <button type="submit" class="boton boton-full">Crear cuenta</button>
@@ -170,4 +181,15 @@
     text-decoration: underline;
   }
 </style>
+
+<script>
+  document.querySelectorAll(".toggle-password").forEach((button) => {
+    button.addEventListener("click", () => {
+      const input = document.getElementById(button.dataset.passwordTarget);
+      const mostrar = input.type === "password";
+      input.type = mostrar ? "text" : "password";
+      button.textContent = mostrar ? "Ocultar" : "Ver";
+    });
+  });
+</script>
 {% endblock %}

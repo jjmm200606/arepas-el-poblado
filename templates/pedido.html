@@ -28,17 +28,6 @@
           <input type="text" id="direccion" name="direccion" required>
         </div>
 
-        <div class="grupo-campo">
-          <label for="metodoPago">Método de pago</label>
-          <select id="metodoPago" name="metodoPago" required>
-            <option value="">Seleccione una opción</option>
-            <option value="Efectivo">Efectivo</option>
-            <option value="Transferencia">Transferencia</option>
-            <option value="Nequi">Nequi</option>
-            <option value="Daviplata">Daviplata</option>
-          </select>
-        </div>
-
         <div class="grupo-campo grupo-campo-full">
           <label for="observaciones">Observaciones</label>
           <textarea
@@ -49,7 +38,30 @@
           ></textarea>
         </div>
 
-        <button type="submit" class="boton boton-full">Finalizar pedido</button>
+        <div class="grupo-campo grupo-campo-full">
+          <span class="label-pago">Método de pago</span>
+          <input type="hidden" id="metodoPago" name="metodoPago" required>
+
+          <div class="metodos-pago-grid">
+            <button type="button" class="metodo-pago-card" data-metodo-pago="Efectivo">
+              <span class="metodo-pago-icono">💵</span>
+              <span class="metodo-pago-texto">
+                <strong>Efectivo</strong>
+                <small>Paga al recibir tu pedido</small>
+              </span>
+            </button>
+
+            <button type="button" class="metodo-pago-card" data-metodo-pago="Wompi">
+              <span class="metodo-pago-icono">💳</span>
+              <span class="metodo-pago-texto">
+                <strong>Transferencia por Wompi</strong>
+                <small>PSE, Nequi, tarjeta y otros medios</small>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="boton boton-full" id="botonFinalizarPedido">Finalizar pedido</button>
       </form>
     </section>
 
@@ -103,9 +115,22 @@
     event.preventDefault();
 
     let carrito = window.cartStore.read();
+    const botonFinalizar = document.getElementById("botonFinalizarPedido");
+    const metodoPago = document.getElementById("metodoPago").value;
 
     if (carrito.length === 0) {
-      alert("No puedes finalizar un pedido sin productos en el carrito.");
+      window.showAppAlert("No puedes finalizar un pedido sin productos en el carrito.", {
+        title: "Carrito vacío",
+        variant: "warning",
+      });
+      return;
+    }
+
+    if (!metodoPago) {
+      window.showAppAlert("Selecciona un método de pago.", {
+        title: "Falta información",
+        variant: "warning",
+      });
       return;
     }
 
@@ -116,12 +141,15 @@
       nombre: document.getElementById("nombre").value,
       telefono: document.getElementById("telefono").value,
       direccion: document.getElementById("direccion").value,
-      metodoPago: document.getElementById("metodoPago").value,
+      metodoPago: metodoPago,
       observaciones: document.getElementById("observaciones").value,
       productos: carrito,
       total: total,
       cantidad_items: carrito.reduce((sum, item) => sum + item.cantidad, 0)
     };
+
+    botonFinalizar.disabled = true;
+    botonFinalizar.textContent = "Procesando pedido...";
 
     // Enviar pedido al servidor
     fetch("/api/crear-pedido", {
@@ -135,15 +163,46 @@
     .then(data => {
       if (data.exito) {
         window.cartStore.clear();
-        alert("¡Pedido registrado correctamente! Número de pedido: #" + data.id_pedido);
-        window.location.href = "/";
+
+        if (data.wompi && data.wompi.url) {
+          window.location.href = data.wompi.url;
+          return;
+        }
+
+        window.showAppAlert("Pedido registrado correctamente. Número de pedido: #" + data.id_pedido, {
+          title: "Pedido confirmado",
+          variant: "success",
+        }).then(() => {
+          window.location.href = "/";
+        });
       } else {
-        alert("Error al procesar el pedido: " + data.mensaje);
+        window.showAppAlert("Error al procesar el pedido: " + data.mensaje, {
+          title: "No se pudo crear el pedido",
+          variant: "warning",
+        });
+        botonFinalizar.disabled = false;
+        botonFinalizar.textContent = "Finalizar pedido";
       }
     })
     .catch(error => {
       console.error("Error:", error);
-      alert("Error al enviar el pedido. Por favor intenta de nuevo.");
+      window.showAppAlert("Error al enviar el pedido. Por favor intenta de nuevo.", {
+        title: "Error de conexión",
+        variant: "warning",
+      });
+      botonFinalizar.disabled = false;
+      botonFinalizar.textContent = "Finalizar pedido";
+    });
+  });
+
+  document.querySelectorAll(".metodo-pago-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      document.querySelectorAll(".metodo-pago-card").forEach((item) => {
+        item.classList.remove("seleccionado");
+      });
+
+      card.classList.add("seleccionado");
+      document.getElementById("metodoPago").value = card.dataset.metodoPago;
     });
   });
 

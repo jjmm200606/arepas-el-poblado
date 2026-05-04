@@ -7,11 +7,11 @@
   <title>{% block title %}Arepas El Poblado{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@1,900&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/styles.css">
   <script>
     window.cartStore = (() => {
-      const currentUserEmail = {{ usuario.email|tojson if usuario else 'null' }};
+      const currentUserEmail = {{ (usuario.get('email') if usuario and usuario.get('email') else None)|tojson }};
       const legacyKey = 'carrito';
 
       function getStorage() {
@@ -86,6 +86,9 @@
     <nav class="navbar-desktop">
       <a href="/" class="nav-link">Inicio</a>
       <a href="/catalogo" class="nav-link">Catálogo</a>
+      {% if usuario %}
+        <a href="/mis-pedidos" class="nav-link">Mis pedidos</a>
+      {% endif %}
       <a href="/contacto" class="nav-link">Contáctanos</a>
       
       {% if usuario and usuario.rol == "admin" %}
@@ -120,6 +123,9 @@
     <nav class="sidebar-nav">
       <a href="/">🏠 Inicio</a>
       <a href="/catalogo">📋 Catálogo</a>
+      {% if usuario %}
+        <a href="/mis-pedidos">📦 Mis pedidos</a>
+      {% endif %}
       <a href="/contacto">📞 Contáctanos</a>
 
       {% if usuario and usuario.rol == "admin" %}
@@ -145,6 +151,21 @@
   <main class="contenido-principal">
     {% block content %}{% endblock %}
   </main>
+
+  <div class="app-dialog-backdrop" id="appDialogBackdrop" aria-hidden="true">
+    <section class="app-dialog app-dialog-info" id="appDialog" role="dialog" aria-modal="true" aria-labelledby="appDialogTitle">
+      <div class="app-dialog-header">
+        <h3 id="appDialogTitle">Arepas El Poblado</h3>
+      </div>
+      <div class="app-dialog-body">
+        <p id="appDialogMessage"></p>
+      </div>
+      <div class="app-dialog-actions">
+        <button type="button" class="app-dialog-btn app-dialog-btn-secondary" id="appDialogCancel">Cancelar</button>
+        <button type="button" class="app-dialog-btn app-dialog-btn-primary" id="appDialogConfirm">Aceptar</button>
+      </div>
+    </section>
+  </div>
 
   <footer class="footer">
     <div class="footer-contenido">
@@ -218,6 +239,77 @@
       footerYear.textContent = new Date().getFullYear();
     }
 
+    const appDialogBackdrop = document.getElementById('appDialogBackdrop');
+    const appDialog = document.getElementById('appDialog');
+    const appDialogTitle = document.getElementById('appDialogTitle');
+    const appDialogMessage = document.getElementById('appDialogMessage');
+    const appDialogCancel = document.getElementById('appDialogCancel');
+    const appDialogConfirm = document.getElementById('appDialogConfirm');
+    let appDialogResolver = null;
+
+    function cerrarAppDialog(resultado) {
+      appDialogBackdrop.classList.remove('visible');
+      appDialogBackdrop.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-abierto');
+      if (appDialogResolver) {
+        appDialogResolver(resultado);
+        appDialogResolver = null;
+      }
+    }
+
+    function abrirAppDialog({
+      title = 'Arepas El Poblado',
+      message = '',
+      confirmText = 'Aceptar',
+      cancelText = 'Cancelar',
+      variant = 'info',
+      showCancel = false,
+    }) {
+      appDialogTitle.textContent = title;
+      appDialogMessage.textContent = message;
+      appDialogConfirm.textContent = confirmText;
+      appDialogCancel.textContent = cancelText;
+      appDialogCancel.style.display = showCancel ? 'inline-flex' : 'none';
+      appDialog.className = `app-dialog app-dialog-${variant}`;
+      appDialogBackdrop.classList.add('visible');
+      appDialogBackdrop.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-abierto');
+
+      return new Promise((resolve) => {
+        appDialogResolver = resolve;
+      });
+    }
+
+    window.showAppAlert = function(message, options = {}) {
+      return abrirAppDialog({
+        ...options,
+        message,
+        showCancel: false,
+      });
+    };
+
+    window.showAppConfirm = function(message, options = {}) {
+      return abrirAppDialog({
+        ...options,
+        message,
+        showCancel: true,
+      });
+    };
+
+    appDialogConfirm.addEventListener('click', () => cerrarAppDialog(true));
+    appDialogCancel.addEventListener('click', () => cerrarAppDialog(false));
+    appDialogBackdrop.addEventListener('click', (event) => {
+      if (event.target === appDialogBackdrop) {
+        cerrarAppDialog(false);
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && appDialogBackdrop.classList.contains('visible')) {
+        cerrarAppDialog(false);
+      }
+    });
+
     // ========== FUNCIONES GLOBALES PARA AJAX EN ADMIN ==========
     
     // Función para cambiar estado de pedido
@@ -249,10 +341,12 @@
           const estadoActualTd = row.querySelector('td:nth-child(6)');
           if (estadoActualTd) {
             let html = '';
-            if (estado === 'Pendiente') html = '<span class="estado estado-pendiente">⏳ Pendiente</span>';
-            else if (estado === 'En proceso') html = '<span class="estado estado-proceso">⚙️ En proceso</span>';
-            else if (estado === 'Completado') html = '<span class="estado estado-completado">✓ Completado</span>';
-            else if (estado === 'Cancelado') html = '<span class="estado estado-cancelado">✕ Cancelado</span>';
+            if (estado === 'pendiente') html = '<span class="estado estado-pendiente">⏳ Pendiente</span>';
+            else if (estado === 'en proceso') html = '<span class="estado estado-proceso">⚙️ En proceso</span>';
+            else if (estado === 'pagado') html = '<span class="estado estado-completado">✓ Pagado</span>';
+            else if (estado === 'completado') html = '<span class="estado estado-completado">✓ Completado</span>';
+            else if (estado === 'cancelado') html = '<span class="estado estado-cancelado">✕ Cancelado</span>';
+            else html = `<span class="estado estado-pendiente">${estado}</span>`;
             estadoActualTd.innerHTML = html;
           }
         }
@@ -264,10 +358,14 @@
     };
 
     // Función para eliminar pedido
-    window.eliminarPedido = function(pedidoId, buttonElement) {
-      if (!confirm('¿Estás seguro de que deseas eliminar este pedido?')) {
-        return;
-      }
+    window.eliminarPedido = async function(pedidoId, buttonElement) {
+      const confirmado = await window.showAppConfirm('¿Estás seguro de que deseas eliminar este pedido?', {
+        title: 'Eliminar pedido',
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar',
+        variant: 'warning',
+      });
+      if (!confirmado) return;
       
       fetch(`/admin/pedidos/eliminar/${pedidoId}`, {
         method: 'POST',
@@ -282,7 +380,10 @@
           row.style.transition = 'opacity 0.3s';
           row.style.opacity = '0';
           setTimeout(() => row.remove(), 300);
-          alert('Pedido eliminado exitosamente');
+          window.showAppAlert('Pedido eliminado exitosamente.', {
+            title: 'Pedido eliminado',
+            variant: 'success',
+          });
         }
       });
     };
