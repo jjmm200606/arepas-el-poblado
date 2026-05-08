@@ -8,3 +8,9 @@ __pycache__/
 .DS_Store
 data/auth_state.json
 backup.sql
+backup*.dump
+backup*.sql
+csv_oracle/
+Wallet_arepaselpoblado/
+wallet_oracle/
+backups/

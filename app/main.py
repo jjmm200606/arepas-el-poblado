@@ -4,18 +4,19 @@
 
 
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 import hashlib
 import hmac
 import json
+import shutil
 import random
 import smtplib
+import subprocess
 from decimal import Decimal, ROUND_HALF_UP
 from urllib.parse import urlencode
 from urllib.request import Request as UrlRequest, urlopen
 from urllib.error import URLError, HTTPError
-from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI, Form, Request, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -30,7 +31,7 @@ app = FastAPI()
 
 
 # Importar SQLAlchemy y modelos
-from .database import SessionLocal
+from .database import SessionLocal, DATABASE_URL
 from .models import (
     Categoria,
     DetallePedido,
@@ -58,7 +59,12 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-TZ_COLOMBIA = ZoneInfo("America/Bogota")
+TZ_COLOMBIA = timezone(timedelta(hours=-5))
+
+
+@app.on_event("startup")
+def ejecutar_tareas_de_arranque():
+    crear_backup_al_iniciar()
 
 
 
@@ -69,6 +75,72 @@ def obtener_usuario(request: Request):
 
 def ahora_colombia():
     return datetime.now(TZ_COLOMBIA).replace(tzinfo=None)
+
+
+def backup_automatico_habilitado():
+    return os.getenv("AUTO_BACKUP_ON_START", "false").strip().lower() in {"1", "true", "yes", "si"}
+
+
+def resolver_pg_dump():
+    ruta_configurada = os.getenv("PG_DUMP_PATH")
+    if ruta_configurada and Path(ruta_configurada).exists():
+        return ruta_configurada
+
+    encontrado = shutil.which("pg_dump")
+    if encontrado:
+        return encontrado
+
+    rutas_comunes = [
+        r"C:\Program Files\PostgreSQL\18\bin\pg_dump.exe",
+        r"C:\Program Files\PostgreSQL\17\bin\pg_dump.exe",
+        r"C:\Program Files\PostgreSQL\16\bin\pg_dump.exe",
+    ]
+    for ruta in rutas_comunes:
+        if Path(ruta).exists():
+            return ruta
+
+    return None
+
+
+def crear_backup_al_iniciar():
+    if os.getenv("VERCEL"):
+        print("⏭️ Backup automático omitido en Vercel.")
+        return
+
+    if not DATABASE_URL.startswith("postgresql"):
+        print("⏭️ Backup automático omitido: la base actual no es PostgreSQL.")
+        return
+
+    if not backup_automatico_habilitado():
+        print("⏭️ Backup automático desactivado.")
+        return
+
+    pg_dump = resolver_pg_dump()
+    if not pg_dump:
+        print("⚠️ No se encontró pg_dump. No se pudo crear el backup automático.")
+        return
+
+    backup_dir = Path(os.getenv("AUTO_BACKUP_DIR", str(BASE_DIR / "backups")))
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = ahora_colombia().strftime("%Y%m%d_%H%M%S")
+    archivo_salida = backup_dir / f"backup_inicio_{timestamp}.dump"
+
+    comando = [
+        pg_dump,
+        f"--dbname={DATABASE_URL}",
+        "--format=custom",
+        f"--file={archivo_salida}",
+        "--no-owner",
+        "--no-privileges",
+    ]
+
+    try:
+        subprocess.run(comando, check=True, capture_output=True, text=True)
+        print(f"✅ Backup automático creado en: {archivo_salida}")
+    except subprocess.CalledProcessError as error:
+        detalle = (error.stderr or error.stdout or "").strip()
+        print(f"⚠️ Error creando backup automático: {detalle or error}")
 
 
 def requiere_admin(request: Request):
