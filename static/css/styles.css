@@ -1389,14 +1389,27 @@ main {
 
 .requisitos-password {
   margin: 8px 0 0;
-  padding-left: 20px;
+  padding-left: 0;
   color: #555555;
   font-size: 13px;
   line-height: 1.45;
+  list-style: none;
 }
 
 .requisitos-password li {
+  position: relative;
+  padding-left: 24px;
+  margin-bottom: 4px;
   transition: color 0.2s ease;
+}
+
+.requisitos-password li::before {
+  content: "○";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #8d8d8d;
+  font-weight: 700;
 }
 
 .requisitos-password li.requisito-pendiente {
@@ -1406,6 +1419,11 @@ main {
 .requisitos-password li.requisito-ok {
   color: var(--verde-principal);
   font-weight: 700;
+}
+
+.requisitos-password li.requisito-ok::before {
+  content: "✓";
+  color: var(--verde-principal);
 }
 
 /* PEDIDO */
