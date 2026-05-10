@@ -15,17 +15,17 @@
       <form id="formPedido">
         <div class="grupo-campo">
           <label for="nombre">Nombre completo</label>
-          <input type="text" id="nombre" name="nombre" required>
+          <input type="text" id="nombre" name="nombre" autocomplete="name" required>
         </div>
 
         <div class="grupo-campo">
           <label for="telefono">Teléfono</label>
-          <input type="text" id="telefono" name="telefono" required>
+          <input type="text" id="telefono" name="telefono" inputmode="numeric" autocomplete="tel" maxlength="15" required>
         </div>
 
         <div class="grupo-campo">
           <label for="direccion">Dirección</label>
-          <input type="text" id="direccion" name="direccion" required>
+          <input type="text" id="direccion" name="direccion" autocomplete="street-address" required>
         </div>
 
         <div class="grupo-campo grupo-campo-full">
@@ -44,7 +44,9 @@
 
           <div class="metodos-pago-grid">
             <button type="button" class="metodo-pago-card" data-metodo-pago="Efectivo">
-              <span class="metodo-pago-icono">💵</span>
+              <span class="metodo-pago-icono metodo-pago-icono-imagen">
+                <img src="/static/img/pagos/efectivo-icon.svg" alt="Pago en efectivo">
+              </span>
               <span class="metodo-pago-texto">
                 <strong>Efectivo</strong>
                 <small>Paga al recibir tu pedido</small>
@@ -52,7 +54,9 @@
             </button>
 
             <button type="button" class="metodo-pago-card" data-metodo-pago="Wompi">
-              <span class="metodo-pago-icono">💳</span>
+              <span class="metodo-pago-icono metodo-pago-icono-logo">
+                <img src="/static/img/pagos/wompi-logo.svg" alt="Wompi">
+              </span>
               <span class="metodo-pago-texto">
                 <strong>Transferencia por Wompi</strong>
                 <small>PSE, Nequi, tarjeta y otros medios</small>
@@ -74,6 +78,38 @@
 </section>
 
 <script>
+  const inputNombre = document.getElementById("nombre");
+  const inputTelefono = document.getElementById("telefono");
+  const inputDireccion = document.getElementById("direccion");
+
+  function limpiarNombre(valor) {
+    return valor
+      .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü\s]/g, "")
+      .replace(/\s{2,}/g, " ");
+  }
+
+  function limpiarTelefono(valor) {
+    return valor.replace(/\D/g, "").slice(0, 15);
+  }
+
+  function limpiarDireccion(valor) {
+    return valor
+      .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü0-9\s#\-,./]/g, "")
+      .replace(/\s{2,}/g, " ");
+  }
+
+  inputNombre.addEventListener("input", () => {
+    inputNombre.value = limpiarNombre(inputNombre.value);
+  });
+
+  inputTelefono.addEventListener("input", () => {
+    inputTelefono.value = limpiarTelefono(inputTelefono.value);
+  });
+
+  inputDireccion.addEventListener("input", () => {
+    inputDireccion.value = limpiarDireccion(inputDireccion.value);
+  });
+
   function cargarResumenPedido() {
     const resumen = document.getElementById("resumenCarrito");
     const totalResumen = document.getElementById("totalResumen");
@@ -134,13 +170,41 @@
       return;
     }
 
+    const nombre = limpiarNombre(document.getElementById("nombre").value).trim();
+    const telefono = limpiarTelefono(document.getElementById("telefono").value);
+    const direccion = limpiarDireccion(document.getElementById("direccion").value).trim();
+
+    if (nombre.length < 3) {
+      window.showAppAlert("Escribe un nombre valido usando solo letras y espacios.", {
+        title: "Nombre no valido",
+        variant: "warning",
+      });
+      return;
+    }
+
+    if (telefono.length < 7) {
+      window.showAppAlert("Escribe un telefono valido de al menos 7 digitos.", {
+        title: "Telefono no valido",
+        variant: "warning",
+      });
+      return;
+    }
+
+    if (direccion.length < 5) {
+      window.showAppAlert("Escribe una direccion valida.", {
+        title: "Direccion no valida",
+        variant: "warning",
+      });
+      return;
+    }
+
     // Calcular total
     const total = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
 
     const pedido = {
-      nombre: document.getElementById("nombre").value,
-      telefono: document.getElementById("telefono").value,
-      direccion: document.getElementById("direccion").value,
+      nombre: nombre,
+      telefono: telefono,
+      direccion: direccion,
       metodoPago: metodoPago,
       observaciones: document.getElementById("observaciones").value,
       productos: carrito,

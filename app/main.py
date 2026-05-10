@@ -292,6 +292,38 @@ def validar_password_seguro(password):
     return errores
 
 
+def validar_nombre_cliente(nombre):
+    nombre_limpio = (nombre or "").strip()
+    if not nombre_limpio:
+        return "Ingresa tu nombre completo."
+    if not all(caracter.isalpha() or caracter.isspace() for caracter in nombre_limpio):
+        return "El nombre solo debe contener letras y espacios."
+    if len(nombre_limpio) < 3:
+        return "El nombre debe tener al menos 3 caracteres."
+    return None
+
+
+def validar_telefono_cliente(telefono):
+    telefono_limpio = "".join(caracter for caracter in (telefono or "") if caracter.isdigit())
+    if not telefono_limpio:
+        return "Ingresa un telefono valido."
+    if len(telefono_limpio) < 7 or len(telefono_limpio) > 15:
+        return "El telefono debe tener entre 7 y 15 digitos."
+    return None
+
+
+def validar_direccion_cliente(direccion):
+    direccion_limpia = (direccion or "").strip()
+    permitidos = set(" #-.,/")
+    if not direccion_limpia:
+        return "Ingresa una direccion valida."
+    if len(direccion_limpia) < 5:
+        return "La direccion debe tener al menos 5 caracteres."
+    if not all(caracter.isalnum() or caracter in permitidos for caracter in direccion_limpia):
+        return "La direccion contiene caracteres no permitidos."
+    return None
+
+
 def construir_correo_html(titulo, saludo, mensaje_principal, codigo, nota):
     return f"""
 <!DOCTYPE html>
@@ -1250,6 +1282,22 @@ async def crear_pedido(request: Request):
                 "mensaje": "No hay productos en el pedido"
             }, status_code=400)
 
+        nombre_form = (data.get("nombre") or "").strip()
+        telefono_form = "".join(caracter for caracter in (data.get("telefono") or "") if caracter.isdigit())
+        direccion_form = " ".join((data.get("direccion") or "").strip().split())
+
+        error_nombre = validar_nombre_cliente(nombre_form)
+        if error_nombre:
+            return JSONResponse({"exito": False, "mensaje": error_nombre}, status_code=400)
+
+        error_telefono = validar_telefono_cliente(telefono_form)
+        if error_telefono:
+            return JSONResponse({"exito": False, "mensaje": error_telefono}, status_code=400)
+
+        error_direccion = validar_direccion_cliente(direccion_form)
+        if error_direccion:
+            return JSONResponse({"exito": False, "mensaje": error_direccion}, status_code=400)
+
         db = SessionLocal()
         try:
             usuario_db = db.query(Usuario).filter(Usuario.email == usuario["email"]).first()
@@ -1268,7 +1316,7 @@ async def crear_pedido(request: Request):
 
             nuevo_pedido = Pedido(
                 usuario_id=usuario_db.id,
-                cliente_direccion=data.get("direccion", ""),
+                cliente_direccion=direccion_form,
                 total=total,
                 estado_pedido_id=estado_pedido.id,
                 numero_pedido=f"PED-{timestamp.strftime('%Y%m%d%H%M%S%f')}",
@@ -1284,7 +1332,6 @@ async def crear_pedido(request: Request):
             db.flush()
             pedido_id = nuevo_pedido.id
 
-            telefono_form = (data.get("telefono") or "").strip()
             if telefono_form and telefono_form != (usuario_db.telefono or ""):
                 usuario_db.telefono = telefono_form
                 usuario_db.updated_at = timestamp
