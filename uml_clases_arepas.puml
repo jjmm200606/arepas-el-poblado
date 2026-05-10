@@ -1,0 +1,169 @@
+@startuml
+title Diagrama de Clases - Arepas El Poblado
+
+hide circle
+skinparam classAttributeIconSize 0
+skinparam linetype polyline
+skinparam nodesep 60
+skinparam ranksep 70
+left to right direction
+
+together {
+class Rol {
+  +id: Integer
+  +nombre_rol: String
+}
+
+class EstadoUsuario {
+  +id: Integer
+  +nombre_estado_usuario: String
+}
+
+class EstadoPedido {
+  +id: Integer
+  +nombre_estado_pedido: String
+}
+
+class Categoria {
+  +id: Integer
+  +nombre: String
+}
+}
+
+class Usuario {
+  +id: Integer
+  +nombre: String
+  +email: String
+  +password: String
+  +created_at: DateTime
+  +updated_at: DateTime
+  +telefono: String
+  +rol_id: Integer
+  +estado_usuario_id: Integer
+  --
+  +rol(): String
+  +estado(): String
+}
+
+class Producto {
+  +id: Integer
+  +descripcion: Text
+  +precio: Numeric
+  +stock: Integer
+  +imagen: String
+  +activo: Boolean
+  +created_at: DateTime
+  +updated_at: DateTime
+  +imagen_url: Text
+  +categoria_id: Integer
+  --
+  +nombre(): String
+}
+
+class Pedido {
+  +id: Integer
+  +usuario_id: Integer
+  +cliente_direccion: Text
+  +total: Numeric
+  +numero_pedido: String
+  +fecha_pedido: DateTime
+  +fecha_entrega: DateTime
+  +notas: Text
+  +created_at: DateTime
+  +updated_at: DateTime
+  +estado_pedido_id: Integer
+  --
+  +estado(): String
+  +cliente_nombre(): String
+  +cliente_email(): String
+  +cliente_telefono(): String
+}
+
+class DetallePedido {
+  +id: Integer
+  +pedido_id: Integer
+  +producto_id: Integer
+  +cantidad: Integer
+  +precio_unitario: Numeric
+  +subtotal: Numeric
+  +created_at: DateTime
+}
+
+class Carrito {
+  +id: Integer
+  +usuario_id: Integer
+  +created_at: DateTime
+  +updated_at: DateTime
+}
+
+class CarritoItem {
+  +id: Integer
+  +carrito_id: Integer
+  +producto_id: Integer
+  +cantidad: Integer
+  +created_at: DateTime
+  +updated_at: DateTime
+}
+
+together {
+class FastAPIApp {
+  +inicio()
+  +catalogo()
+  +carrito()
+  +pedido()
+  +mis_pedidos()
+  +login()
+  +register()
+  +verificar_email()
+  +recuperar_password()
+  +reset_password()
+  +admin_panel()
+  +admin_productos()
+  +admin_pedidos()
+  +admin_usuarios()
+  +crear_pedido()
+  +webhook_wompi()
+}
+
+class DatabaseConfig {
+  +DATABASE_URL
+  +engine
+  +SessionLocal
+  --
+  +get_db()
+  +test_connection()
+}
+}
+
+Rol -[hidden]right- EstadoUsuario
+EstadoUsuario -[hidden]right- EstadoPedido
+EstadoPedido -[hidden]right- Categoria
+
+Usuario -[hidden]down- Pedido
+Producto -[hidden]down- DetallePedido
+Carrito -[hidden]down- CarritoItem
+
+Categoria -[hidden]down- Producto
+Usuario -[hidden]right- Producto
+Pedido -[hidden]right- Carrito
+
+FastAPIApp -[hidden]down- DatabaseConfig
+
+Rol "1" -down- "0..*" Usuario : asigna
+EstadoUsuario "1" -down- "0..*" Usuario : define
+EstadoPedido "1" -down- "0..*" Pedido : define
+Categoria "1" -down- "0..*" Producto : clasifica
+Usuario "1" -down- "0..*" Pedido : realiza
+Usuario "1" -down- "0..1" Carrito : posee
+Pedido "1" -right- "1..*" DetallePedido : contiene
+Producto "1" -left- "0..*" DetallePedido : participa
+Carrito "1" -down- "0..*" CarritoItem : contiene
+Producto "1" -down- "0..*" CarritoItem : se_agrega_en
+
+FastAPIApp ..> DatabaseConfig : usa
+FastAPIApp ..> Usuario : gestiona
+FastAPIApp ..> Producto : consulta/edita
+FastAPIApp ..> Pedido : crea/actualiza
+FastAPIApp ..> Carrito : administra
+
+@enduml

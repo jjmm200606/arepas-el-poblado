@@ -994,19 +994,38 @@ def recuperar_password(request: Request, email: str = Form(...)):
         "request": request,
         "usuario": None,
         "email": email,
+        "codigo": "",
         "error": None,
         "mensaje": "Si el correo existe, enviamos un código para recuperar la contraseña."
     })
 
 
 @app.get("/reset-password", response_class=HTMLResponse)
-def reset_password_form(request: Request, email: str = ""):
+def reset_password_form(request: Request, email: str = "", codigo: str = ""):
     return templates.TemplateResponse("reset_password.html", {
         "request": request,
         "usuario": None,
         "email": email,
+        "codigo": codigo,
         "error": None,
         "mensaje": None
+    })
+
+
+@app.post("/reenviar-reset-password", response_class=HTMLResponse)
+def reenviar_reset_password(request: Request, email: str = Form(...)):
+    db = SessionLocal()
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    if usuario:
+        enviar_codigo_reset(usuario)
+    db.close()
+    return templates.TemplateResponse("reset_password.html", {
+        "request": request,
+        "usuario": None,
+        "email": email,
+        "codigo": "",
+        "error": None,
+        "mensaje": "Si el correo existe, enviamos un nuevo código de recuperación."
     })
 
 
@@ -1023,6 +1042,7 @@ def reset_password(
             "request": request,
             "usuario": None,
             "email": email,
+            "codigo": codigo,
             "error": "Las contraseñas no coinciden.",
             "mensaje": None
         })
@@ -1033,6 +1053,7 @@ def reset_password(
             "request": request,
             "usuario": None,
             "email": email,
+            "codigo": codigo,
             "error": " | ".join(errores_password),
             "mensaje": None
         })
@@ -1050,6 +1071,7 @@ def reset_password(
             "request": request,
             "usuario": None,
             "email": email,
+            "codigo": codigo,
             "error": "El código no es válido o ya venció.",
             "mensaje": None
         })

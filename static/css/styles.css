@@ -1395,6 +1395,19 @@ main {
   line-height: 1.45;
 }
 
+.requisitos-password li {
+  transition: color 0.2s ease;
+}
+
+.requisitos-password li.requisito-pendiente {
+  color: #555555;
+}
+
+.requisitos-password li.requisito-ok {
+  color: var(--verde-principal);
+  font-weight: 700;
+}
+
 /* PEDIDO */
 .pedido-wrapper {
   max-width: 1200px;

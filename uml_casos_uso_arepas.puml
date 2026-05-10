@@ -1,0 +1,57 @@
+@startuml
+left to right direction
+title Diagrama de Casos de Uso - Arepas El Poblado
+
+actor Visitante
+actor Cliente
+actor Administrador
+actor "Wompi" as Wompi
+actor "Servicio de Correo" as Correo
+
+rectangle "Sistema Web Arepas El Poblado" {
+  usecase "Ver inicio" as UC1
+  usecase "Ver catalogo" as UC2
+  usecase "Agregar al carrito" as UC3
+  usecase "Registrarse" as UC4
+  usecase "Verificar correo" as UC5
+  usecase "Iniciar sesion" as UC6
+  usecase "Recuperar contraseña" as UC7
+  usecase "Enviar contacto" as UC8
+  usecase "Finalizar pedido" as UC9
+  usecase "Pagar con Wompi" as UC10
+  usecase "Consultar mis pedidos" as UC11
+  usecase "Cerrar sesion" as UC12
+  usecase "Gestionar productos" as UC13
+  usecase "Gestionar pedidos" as UC14
+  usecase "Gestionar usuarios" as UC15
+  usecase "Enviar codigo por correo" as UC16
+  usecase "Recibir webhook de pago" as UC17
+}
+
+Visitante --> UC1
+Visitante --> UC2
+Visitante --> UC3
+Visitante --> UC4
+Visitante --> UC6
+Visitante --> UC7
+Visitante --> UC8
+
+Cliente --> UC2
+Cliente --> UC3
+Cliente --> UC9
+Cliente --> UC10
+Cliente --> UC11
+Cliente --> UC12
+
+Administrador --> UC13
+Administrador --> UC14
+Administrador --> UC15
+
+UC4 .> UC16 : <<include>>
+UC5 .> UC16 : <<include>>
+UC7 .> UC16 : <<include>>
+UC10 --> Wompi
+UC17 <-- Wompi
+UC16 --> Correo
+
+@enduml

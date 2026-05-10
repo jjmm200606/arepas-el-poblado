@@ -12,5 +12,6 @@ backup*.dump
 backup*.sql
 csv_oracle/
 Wallet_arepaselpoblado/
+Wallet_arepaselpoblado.zip
 wallet_oracle/
 backups/
