@@ -37,10 +37,10 @@
           <button type="button" class="toggle-password" data-password-target="password">Ver</button>
         </div>
         <ul class="requisitos-password">
-          <li>Mínimo 8 caracteres</li>
-          <li>Una letra mayúscula y una minúscula</li>
-          <li>Un número</li>
-          <li>Un carácter especial, por ejemplo @, # o !</li>
+          <li id="regla-longitud">Mínimo 8 caracteres</li>
+          <li id="regla-mayus-minus">Una letra mayúscula y una minúscula</li>
+          <li id="regla-numero">Un número</li>
+          <li id="regla-especial">Un carácter especial, por ejemplo @, # o !</li>
         </ul>
       </div>
 
@@ -50,6 +50,9 @@
           <input type="password" id="password_confirm" name="password_confirm" required minlength="8" placeholder="Confirma tu contraseña">
           <button type="button" class="toggle-password" data-password-target="password_confirm">Ver</button>
         </div>
+        <ul class="requisitos-password requisitos-password-confirmacion">
+          <li id="regla-coincidencia">Las contraseñas coinciden</li>
+        </ul>
       </div>
 
       <button type="submit" class="boton boton-full">Crear cuenta</button>
@@ -191,5 +194,44 @@
       button.textContent = mostrar ? "Ocultar" : "Ver";
     });
   });
+
+  const inputPassword = document.getElementById("password");
+  const inputPasswordConfirm = document.getElementById("password_confirm");
+  const reglas = {
+    longitud: document.getElementById("regla-longitud"),
+    mayusMinus: document.getElementById("regla-mayus-minus"),
+    numero: document.getElementById("regla-numero"),
+    especial: document.getElementById("regla-especial"),
+    coincidencia: document.getElementById("regla-coincidencia")
+  };
+
+  const especiales = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/]/;
+
+  function marcarRegla(elemento, cumple) {
+    elemento.classList.toggle("requisito-ok", cumple);
+    elemento.classList.toggle("requisito-pendiente", !cumple);
+  }
+
+  function validarPasswordEnVivo() {
+    const valor = inputPassword.value || "";
+    const confirmacion = inputPasswordConfirm.value || "";
+
+    marcarRegla(reglas.longitud, valor.length >= 8);
+    marcarRegla(reglas.mayusMinus, /[a-z]/.test(valor) && /[A-Z]/.test(valor));
+    marcarRegla(reglas.numero, /\d/.test(valor));
+    marcarRegla(reglas.especial, especiales.test(valor));
+
+    const coinciden = valor.length > 0 && confirmacion.length > 0 && valor === confirmacion;
+    marcarRegla(reglas.coincidencia, coinciden);
+    inputPasswordConfirm.setCustomValidity(
+      confirmacion.length > 0 && valor !== confirmacion
+        ? "Las contraseñas no coinciden."
+        : ""
+    );
+  }
+
+  validarPasswordEnVivo();
+  inputPassword.addEventListener("input", validarPasswordEnVivo);
+  inputPasswordConfirm.addEventListener("input", validarPasswordEnVivo);
 </script>
 {% endblock %}
