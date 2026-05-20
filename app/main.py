@@ -419,10 +419,14 @@ def enviar_correo(destinatario, asunto, mensaje, html=None):
     if html:
         email.add_alternative(html, subtype="html")
 
-    with smtplib.SMTP(smtp_host, smtp_port) as servidor:
-        servidor.starttls()
-        servidor.login(smtp_user, smtp_password)
-        servidor.send_message(email)
+    try:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as servidor:
+            servidor.starttls()
+            servidor.login(smtp_user, smtp_password)
+            servidor.send_message(email)
+    except Exception as exc:
+        print(f"[ERROR CORREO] Para: {destinatario} | Asunto: {asunto} | Error: {exc}")
+        return False
 
     return True
 
@@ -444,7 +448,7 @@ def enviar_codigo_verificacion(usuario):
         "Arepas El Poblado"
     )
     mensaje_html = construir_correo_verificacion_html(usuario.nombre, codigo)
-    enviar_correo(
+    return enviar_correo(
         usuario.email,
         "Confirma tu correo - Arepas El Poblado",
         mensaje_texto,
@@ -461,7 +465,7 @@ def enviar_codigo_reset(usuario):
         "Arepas El Poblado"
     )
     mensaje_html = construir_correo_reset_html(usuario.nombre, codigo)
-    enviar_correo(
+    return enviar_correo(
         usuario.email,
         "Recupera tu contraseña - Arepas El Poblado",
         mensaje_texto,
@@ -842,14 +846,18 @@ def login(
         })
 
     if not email_verificado_externamente(usuario.email):
-        enviar_codigo_verificacion(usuario)
+        correo_enviado = enviar_codigo_verificacion(usuario)
         db.close()
         return templates.TemplateResponse("verificar_email.html", {
             "request": request,
             "usuario": None,
             "email": email,
             "error": "Debes confirmar tu correo antes de iniciar sesión.",
-            "mensaje": "Te enviamos un nuevo código de confirmación."
+            "mensaje": (
+                "Te enviamos un nuevo código de confirmación."
+                if correo_enviado
+                else "No pudimos enviar el correo en este momento. Intenta reenviar la verificación más tarde."
+            ),
         })
 
     request.session["usuario"] = {
@@ -911,7 +919,7 @@ def register(
             "error": error_mensaje,
             "exito": False
         })
-    # Registrar el nuevo usuario en la base de datos
+
     nuevo_usuario = Usuario(
         nombre=nombre,
         email=email,
@@ -1132,7 +1140,7 @@ def admin_panel(request: Request):
     })
 
 
-# ===== GESTIÓN DE PRODUCTOS =====
+
 
 @app.get("/admin/productos", response_class=HTMLResponse)
 def admin_productos(request: Request):
@@ -1214,7 +1222,7 @@ def eliminar_producto(request: Request, producto_id: int):
     return RedirectResponse(url="/admin/productos", status_code=303)
 
 
-# ===== GESTIÓN DE PEDIDOS =====
+
 @app.get("/admin/pedidos", response_class=HTMLResponse)
 def admin_pedidos(request: Request):
     if not requiere_admin(request):
@@ -1428,9 +1436,6 @@ async def webhook_wompi(request: Request):
         db.close()
 
 
-# ===== GESTIÓN DE USUARIOS =====
-
-# ===== GESTIÓN DE USUARIOS =====
 @app.get("/admin/usuarios", response_class=HTMLResponse)
 def admin_usuarios(request: Request):
     if not requiere_admin(request):
@@ -1451,7 +1456,6 @@ def admin_usuarios(request: Request):
     return response
 
 
-# ===== RUTAS PARA CONTENIDO AJAX =====
 
 @app.get("/admin/productos/content", response_class=HTMLResponse)
 def admin_productos_content(request: Request):
@@ -1549,7 +1553,7 @@ def editar_usuario_admin(
     return JSONResponse({"exito": True, "mensaje": "Usuario actualizado"})
 
 
-# ===== ELIMINAR PEDIDO DESDE ADMIN =====
+
 @app.post("/admin/pedidos/eliminar/{pedido_id}")
 def eliminar_pedido(request: Request, pedido_id: int):
     if not requiere_admin(request):
